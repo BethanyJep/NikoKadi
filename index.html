@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Niko Kadi</title>
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <main class="app">
+      <h1>🃏 Niko Kadi</h1>
+      <p class="subtitle">Fast online-style Kadi for 2+ players with scoring and a full 54-card deck.</p>
+
+      <section class="controls">
+        <label for="playerNames">Player names (comma-separated)</label>
+        <input id="playerNames" value="Bethany, Niko" />
+        <button id="startBtn">Start Game</button>
+      </section>
+
+      <section id="gameArea" style="display: none;">
+        <div class="turn-controls">
+          <button id="declareBtn">Declare Niko Kadi</button>
+          <button id="drawBtn">Draw / Take Penalty</button>
+          <button id="nextRoundBtn" style="display: none;">Next Round</button>
+        </div>
+        <div id="board"></div>
+      </section>
+    </main>
+
+    <script src="game.js"></script>
+    <script src="app.js"></script>
+  </body>
+</html>
