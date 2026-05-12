@@ -7,7 +7,6 @@ An online version of Kadi.
 Open `index.html` in a browser, or serve the folder:
 
 ```bash
-cd .
 python3 -m http.server 8000
 ```
 

@@ -16,7 +16,7 @@
       .replace(/&/g, '&amp;')
       .replace(/</g, '&lt;')
       .replace(/>/g, '&gt;')
-      .replace(/\"/g, '&quot;')
+      .replace(/"/g, '&quot;')
       .replace(/'/g, '&#39;');
   }
 
@@ -110,12 +110,13 @@
     declareBtn.disabled = !!state.winner;
     nextRoundBtn.style.display = state.winner ? 'inline-block' : 'none';
 
-    Array.prototype.forEach.call(document.querySelectorAll('[data-card-id]'), function (el) {
-      el.addEventListener('click', function () {
-        play(Number(el.getAttribute('data-card-id')));
-      });
-    });
   }
+
+  board.addEventListener('click', function (event) {
+    var cardButton = event.target.closest('[data-card-id]');
+    if (!cardButton) return;
+    play(Number(cardButton.getAttribute('data-card-id')));
+  });
 
   startBtn.addEventListener('click', startRound);
   drawBtn.addEventListener('click', draw);
