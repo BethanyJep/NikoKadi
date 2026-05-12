@@ -4,10 +4,10 @@ An online version of Kadi.
 
 ## Play locally
 
-Open `/tmp/workspace/BethanyJep/NikoKadi/index.html` in a browser, or serve the folder:
+Open `index.html` in a browser, or serve the folder:
 
 ```bash
-cd /tmp/workspace/BethanyJep/NikoKadi
+cd .
 python3 -m http.server 8000
 ```
 

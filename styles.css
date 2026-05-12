@@ -46,6 +46,14 @@ input {
   margin-right: 0.5rem;
 }
 
+select {
+  width: min(100%, 420px);
+  padding: 0.5rem;
+  border-radius: 8px;
+  border: 1px solid #495;
+  margin-right: 0.5rem;
+}
+
 button {
   border: 0;
   border-radius: 10px;

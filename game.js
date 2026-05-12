@@ -46,8 +46,8 @@
       }
     }
 
-    deck.push({ id: id++, rank: 'JOKER', suit: '��', label: 'JOKER', type: 'penalty' });
-    deck.push({ id: id++, rank: 'JOKER', suit: '🃏', label: 'JOKER', type: 'penalty' });
+    deck.push({ id: id++, rank: 'JOKER', suit: 'JOKER', label: 'JOKER', type: 'penalty' });
+    deck.push({ id: id++, rank: 'JOKER', suit: 'JOKER', label: 'JOKER', type: 'penalty' });
     return deck;
   }
 

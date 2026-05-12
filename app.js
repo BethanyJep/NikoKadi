@@ -7,8 +7,18 @@
   var drawBtn = document.getElementById('drawBtn');
   var declareBtn = document.getElementById('declareBtn');
   var nextRoundBtn = document.getElementById('nextRoundBtn');
+  var suitChoiceSelect = document.getElementById('suitChoice');
   var gameArea = document.getElementById('gameArea');
   var board = document.getElementById('board');
+
+  function escapeHtml(value) {
+    return String(value)
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/\"/g, '&quot;')
+      .replace(/'/g, '&#39;');
+  }
 
   function getNames() {
     return namesInput.value
@@ -38,10 +48,7 @@
 
     var suitChoice;
     if (card.rank === 'A') {
-      suitChoice = prompt('Choose suit for next player: ♠, ♥, ♦, ♣', card.suit || '♠');
-      if (KadiGame.SUITS.indexOf(suitChoice) === -1) {
-        suitChoice = card.suit;
-      }
+      suitChoice = suitChoiceSelect.value;
     }
 
     KadiGame.playCard(state, state.currentPlayer, cardId, suitChoice);
@@ -66,11 +73,11 @@
   function playerCardList(player, active) {
     var cards = player.hand.map(function (card) {
       if (!active) return '<span class="card hidden">🂠</span>';
-      return '<button class="card" data-card-id="' + card.id + '">' + card.label + '</button>';
+      return '<button class="card" data-card-id="' + card.id + '">' + escapeHtml(card.label) + '</button>';
     }).join('');
 
     return '<section class="player ' + (active ? 'active' : '') + '">'
-      + '<h3>' + player.name + ' <small>(' + player.hand.length + ' cards)</small></h3>'
+      + '<h3>' + escapeHtml(player.name) + ' <small>(' + player.hand.length + ' cards)</small></h3>'
       + '<div class="hand">' + cards + '</div>'
       + '<p class="meta">Score: <strong>' + player.score + '</strong> '
       + (player.declaredNiko ? '• ✅ Niko Kadi declared' : '') + '</p>'
@@ -87,13 +94,13 @@
     var top = KadiGame.topDiscard(state);
 
     board.innerHTML = '<div class="status">'
-      + '<p><strong>Top card:</strong> ' + top.label + '</p>'
+      + '<p><strong>Top card:</strong> ' + escapeHtml(top.label) + '</p>'
       + '<p><strong>Draw pile:</strong> ' + state.drawPile.length + ' cards</p>'
       + '<p><strong>Direction:</strong> ' + (state.direction === 1 ? '↻ Clockwise' : '↺ Counter-clockwise') + '</p>'
-      + '<p><strong>Current:</strong> ' + currentPlayer().name + '</p>'
-      + (state.pendingPenalty ? '<p class="warning"><strong>Penalty:</strong> draw ' + state.pendingPenalty.amount + ' unless you play ' + state.pendingPenalty.rank + ' or Ace.</p>' : '')
-      + (state.requiredSuit ? '<p><strong>Requested Suit:</strong> ' + state.requiredSuit + '</p>' : '')
-      + (state.winner ? '<p class="winner">🏆 ' + state.message + '</p>' : '<p>' + state.message + '</p>')
+      + '<p><strong>Current:</strong> ' + escapeHtml(currentPlayer().name) + '</p>'
+      + (state.pendingPenalty ? '<p class="warning"><strong>Penalty:</strong> draw ' + state.pendingPenalty.amount + ' unless you play ' + escapeHtml(state.pendingPenalty.rank) + ' or Ace.</p>' : '')
+      + (state.requiredSuit ? '<p><strong>Requested Suit:</strong> ' + escapeHtml(state.requiredSuit) + '</p>' : '')
+      + (state.winner ? '<p class="winner">🏆 ' + escapeHtml(state.message) + '</p>' : '<p>' + escapeHtml(state.message) + '</p>')
       + '</div>'
       + '<div class="players">'
       + state.players.map(function (p, i) { return playerCardList(p, i === state.currentPlayer); }).join('')
