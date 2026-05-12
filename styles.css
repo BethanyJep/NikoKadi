@@ -1,0 +1,99 @@
+:root {
+  color-scheme: dark;
+  --bg: #141828;
+  --card: #1f2740;
+  --ink: #f4f6ff;
+  --accent: #8b5cf6;
+  --good: #22c55e;
+  --warn: #f97316;
+}
+
+* { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  min-height: 100vh;
+  font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Ubuntu, Cantarell;
+  background: radial-gradient(circle at top, #2c1f68, var(--bg));
+  color: var(--ink);
+}
+
+.app {
+  max-width: 1080px;
+  margin: 0 auto;
+  padding: 1.25rem;
+}
+
+h1 { margin-bottom: 0.25rem; }
+.subtitle { margin-top: 0; opacity: 0.9; }
+
+.controls,
+.status,
+.player,
+.turn-controls {
+  background: color-mix(in oklab, var(--card), black 12%);
+  border: 1px solid color-mix(in oklab, var(--accent), white 55%);
+  border-radius: 12px;
+  padding: 0.9rem;
+  margin-bottom: 1rem;
+}
+
+input {
+  width: min(100%, 420px);
+  padding: 0.5rem;
+  border-radius: 8px;
+  border: 1px solid #495;
+  margin-right: 0.5rem;
+}
+
+select {
+  width: min(100%, 420px);
+  padding: 0.5rem;
+  border-radius: 8px;
+  border: 1px solid #495;
+  margin-right: 0.5rem;
+}
+
+button {
+  border: 0;
+  border-radius: 10px;
+  padding: 0.45rem 0.7rem;
+  background: var(--accent);
+  color: var(--ink);
+  font-weight: 600;
+  cursor: pointer;
+}
+
+button:hover { filter: brightness(1.1); }
+button:disabled { opacity: 0.5; cursor: not-allowed; }
+
+.players {
+  display: grid;
+  gap: 0.8rem;
+}
+
+.player.active {
+  border-color: var(--good);
+  box-shadow: 0 0 0 2px color-mix(in oklab, var(--good), black 60%);
+}
+
+.hand {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+}
+
+.card {
+  min-width: 70px;
+  background: #fff;
+  color: #111;
+}
+
+.card.hidden {
+  color: #aaa;
+  background: #2d3255;
+}
+
+.warning { color: var(--warn); }
+.winner { color: var(--good); font-weight: 700; }
+.meta { opacity: 0.85; margin-bottom: 0; }
