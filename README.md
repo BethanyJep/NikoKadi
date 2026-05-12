@@ -33,6 +33,6 @@ Then visit `http://localhost:8000`.
 Run focused tests:
 
 ```bash
-cd /tmp/workspace/BethanyJep/NikoKadi
+cd <project-directory>
 node --test
 ```
