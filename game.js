@@ -117,6 +117,7 @@
 
   function cardMatches(card, top, requiredSuit) {
     if (!top) return true;
+    if (card.rank === 'JOKER') return true;
     if (requiredSuit) {
       return card.suit === requiredSuit || card.rank === top.rank;
     }
@@ -201,9 +202,11 @@
     var card = player.hand[cardPos];
 
     if (state.pendingPenalty) {
-      var canBlock = card.rank === state.pendingPenalty.rank || card.rank === 'A';
+      var top = topDiscard(state);
+      var canBlock = card.rank === 'A' || card.rank === 'JOKER' ||
+        ((card.rank === '2' || card.rank === '3') && (top.suit === 'JOKER' || card.suit === top.suit));
       if (!canBlock) {
-        state.message = player.name + ' must play ' + state.pendingPenalty.rank + ' or Ace to block penalty.';
+        state.message = player.name + ' must play a matching-suit 2/3, Joker, or Ace to block penalty.';
         return state;
       }
     } else if (!cardMatches(card, topDiscard(state), state.requiredSuit)) {
@@ -220,7 +223,7 @@
 
     if (card.type === 'penalty') {
       var amount = penaltyValue(card);
-      if (state.pendingPenalty && state.pendingPenalty.rank === card.rank) {
+      if (state.pendingPenalty) {
         amount += state.pendingPenalty.amount;
       }
       state.pendingPenalty = {
@@ -303,6 +306,137 @@
     return state;
   }
 
+  function playCards(state, playerIndex, cardIds, suitChoice) {
+    if (state.winner) return state;
+    if (playerIndex !== state.currentPlayer) return state;
+    if (!cardIds || cardIds.length === 0) return state;
+
+    // Single card – delegate to existing playCard
+    if (cardIds.length === 1) {
+      return playCard(state, playerIndex, cardIds[0], suitChoice);
+    }
+
+    var player = state.players[playerIndex];
+    var top = topDiscard(state);
+    var cards = [];
+
+    // Resolve all cards from hand
+    for (var i = 0; i < cardIds.length; i += 1) {
+      var pos = player.hand.findIndex(function (c) { return c.id === cardIds[i]; });
+      if (pos < 0) return state;
+      cards.push(player.hand[pos]);
+    }
+
+    if (state.pendingPenalty) {
+      // Penalty blocking: every card must be a penalty card
+      for (var p = 0; p < cards.length; p += 1) {
+        var pc = cards[p];
+        if (pc.type !== 'penalty') {
+          state.message = 'Only penalty cards (2, 3, Joker) can be played together to block.';
+          return state;
+        }
+        if (pc.rank !== 'JOKER' && top.suit !== 'JOKER' && pc.suit !== top.suit) {
+          state.message = pc.label + ' does not match the suit of ' + top.label + '.';
+          return state;
+        }
+      }
+
+      // Remove from hand, push to discard, accumulate penalty
+      var totalPenalty = state.pendingPenalty.amount;
+      var labels = [];
+      for (var j = 0; j < cards.length; j += 1) {
+        player.hand = player.hand.filter(function (c) { return c.id !== cards[j].id; });
+        state.discardPile.push(cards[j]);
+        totalPenalty += penaltyValue(cards[j]);
+        labels.push(cards[j].label);
+      }
+
+      var lastCard = cards[cards.length - 1];
+      state.pendingPenalty = { rank: lastCard.rank, amount: totalPenalty };
+      state.requiredSuit = null;
+      state.message = player.name + ' played ' + labels.join(' + ') + ' (penalty now ' + totalPenalty + ')';
+    } else {
+      // Normal multi-card play: all cards must share the same rank
+      var firstCard = cards[0];
+      if (!cardMatches(firstCard, top, state.requiredSuit)) {
+        state.message = firstCard.label + ' does not match the top card.';
+        return state;
+      }
+      for (var k = 1; k < cards.length; k += 1) {
+        if (cards[k].rank !== firstCard.rank && cards[k].rank !== 'JOKER') {
+          state.message = 'All cards must be the same rank to play together.';
+          return state;
+        }
+      }
+
+      var skip = 0;
+      var mLabels = [];
+      for (var m = 0; m < cards.length; m += 1) {
+        player.hand = player.hand.filter(function (c) { return c.id !== cards[m].id; });
+        state.discardPile.push(cards[m]);
+        mLabels.push(cards[m].label);
+
+        var cc = cards[m];
+        if (cc.type === 'penalty') {
+          var amt = penaltyValue(cc);
+          if (state.pendingPenalty) {
+            amt += state.pendingPenalty.amount;
+          }
+          state.pendingPenalty = { rank: cc.rank, amount: amt };
+        }
+        if (cc.type === 'jump') skip += 1;
+        if (cc.type === 'kickback') state.direction *= -1;
+      }
+
+      state.requiredSuit = null;
+      state.message = player.name + ' played ' + mLabels.join(' + ');
+
+      // Handle ace suit choice on last card if applicable
+      var last = cards[cards.length - 1];
+      if (last.rank === 'A') {
+        state.requiredSuit = suitChoice || last.suit;
+      }
+
+      // Handle question on last card
+      if (last.type === 'question') {
+        var answers = availableAnswerCards(player, last);
+        if (answers.length > 0) {
+          var answer = answers[0];
+          player.hand = player.hand.filter(function (c) { return c.id !== answer.id; });
+          state.discardPile.push(answer);
+          state.message += ' + answer ' + answer.label;
+        } else {
+          drawCard(state, playerIndex, 1);
+          state.message += ' but had no answer, so drew 1 card.';
+        }
+      }
+
+      if (!state.pendingPenalty) {
+        state.currentPlayer = nextPlayerIndex(state, skip);
+      } else {
+        state.currentPlayer = nextPlayerIndex(state, 0);
+      }
+    }
+
+    if (state.pendingPenalty) {
+      state.currentPlayer = nextPlayerIndex(state, 0);
+    }
+
+    if (player.hand.length === 0) {
+      if (winningAllowed(state, player)) {
+        state.winner = player.name;
+        var score = roundScore(state, playerIndex);
+        player.score += score;
+        state.message = player.name + ' wins the round and earns ' + score + ' points!';
+        return state;
+      }
+      drawCard(state, playerIndex, 1);
+      state.message = player.name + ' forgot to declare Niko Kadi and draws 1 card.';
+    }
+
+    return state;
+  }
+
   return {
     SUITS: SUITS,
     cardType: cardType,
@@ -310,6 +444,7 @@
     canStartDiscard: canStartDiscard,
     startRound: startRound,
     playCard: playCard,
+    playCards: playCards,
     drawOrTakePenalty: drawOrTakePenalty,
     declareNiko: declareNiko,
     cardMatches: cardMatches,

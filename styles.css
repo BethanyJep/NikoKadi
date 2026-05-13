@@ -94,6 +94,12 @@ button:disabled { opacity: 0.5; cursor: not-allowed; }
   background: #2d3255;
 }
 
+.card.selected {
+  outline: 3px solid var(--good);
+  outline-offset: 2px;
+  background: #d4ffd4;
+}
+
 .warning { color: var(--warn); }
 .winner { color: var(--good); font-weight: 700; }
 .meta { opacity: 0.85; margin-bottom: 0; }

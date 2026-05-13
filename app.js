@@ -1,11 +1,13 @@
 (function () {
   var state = null;
   var scores = {};
+  var selectedCardIds = [];
 
   var namesInput = document.getElementById('playerNames');
   var startBtn = document.getElementById('startBtn');
   var drawBtn = document.getElementById('drawBtn');
   var declareBtn = document.getElementById('declareBtn');
+  var playSelectedBtn = document.getElementById('playSelectedBtn');
   var nextRoundBtn = document.getElementById('nextRoundBtn');
   var suitChoiceSelect = document.getElementById('suitChoice');
   var gameArea = document.getElementById('gameArea');
@@ -46,12 +48,32 @@
     var card = player.hand.find(function (c) { return c.id === cardId; });
     if (!card) return;
 
+    // Toggle selection
+    var idx = selectedCardIds.indexOf(cardId);
+    if (idx >= 0) {
+      selectedCardIds.splice(idx, 1);
+    } else {
+      selectedCardIds.push(cardId);
+    }
+    render();
+  }
+
+  function playSelected() {
+    if (selectedCardIds.length === 0) return;
+
     var suitChoice;
-    if (card.rank === 'A') {
+    var player = currentPlayer();
+    // Check if any selected card is an Ace for suit choice
+    var hasAce = selectedCardIds.some(function (id) {
+      var c = player.hand.find(function (h) { return h.id === id; });
+      return c && c.rank === 'A';
+    });
+    if (hasAce) {
       suitChoice = suitChoiceSelect.value;
     }
 
-    KadiGame.playCard(state, state.currentPlayer, cardId, suitChoice);
+    KadiGame.playCards(state, state.currentPlayer, selectedCardIds.slice(), suitChoice);
+    selectedCardIds = [];
 
     if (state.winner) {
       scores[state.winner] = state.players.find(function (p) { return p.name === state.winner; }).score;
@@ -73,7 +95,8 @@
   function playerCardList(player, active) {
     var cards = player.hand.map(function (card) {
       if (!active) return '<span class="card hidden">🂠</span>';
-      return '<button class="card" data-card-id="' + card.id + '">' + escapeHtml(card.label) + '</button>';
+      var isSelected = selectedCardIds.indexOf(card.id) >= 0;
+      return '<button class="card' + (isSelected ? ' selected' : '') + '" data-card-id="' + card.id + '">' + escapeHtml(card.label) + '</button>';
     }).join('');
 
     return '<section class="player ' + (active ? 'active' : '') + '">'
@@ -98,7 +121,7 @@
       + '<p><strong>Draw pile:</strong> ' + state.drawPile.length + ' cards</p>'
       + '<p><strong>Direction:</strong> ' + (state.direction === 1 ? '↻ Clockwise' : '↺ Counter-clockwise') + '</p>'
       + '<p><strong>Current:</strong> ' + escapeHtml(currentPlayer().name) + '</p>'
-      + (state.pendingPenalty ? '<p class="warning"><strong>Penalty:</strong> draw ' + state.pendingPenalty.amount + ' unless you play ' + escapeHtml(state.pendingPenalty.rank) + ' or Ace.</p>' : '')
+      + (state.pendingPenalty ? '<p class="warning"><strong>Penalty:</strong> draw ' + state.pendingPenalty.amount + ' unless you block with a matching-suit 2/3, Joker, or Ace.</p>' : '')
       + (state.requiredSuit ? '<p><strong>Requested Suit:</strong> ' + escapeHtml(state.requiredSuit) + '</p>' : '')
       + (state.winner ? '<p class="winner">🏆 ' + escapeHtml(state.message) + '</p>' : '<p>' + escapeHtml(state.message) + '</p>')
       + '</div>'
@@ -108,6 +131,7 @@
 
     drawBtn.disabled = !!state.winner;
     declareBtn.disabled = !!state.winner;
+    playSelectedBtn.style.display = (!state.winner && selectedCardIds.length > 0) ? 'inline-block' : 'none';
     nextRoundBtn.style.display = state.winner ? 'inline-block' : 'none';
 
   }
@@ -121,6 +145,7 @@
   startBtn.addEventListener('click', startRound);
   drawBtn.addEventListener('click', draw);
   declareBtn.addEventListener('click', declare);
+  playSelectedBtn.addEventListener('click', playSelected);
   nextRoundBtn.addEventListener('click', startRound);
 
   render();
