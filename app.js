@@ -292,7 +292,7 @@
   }
 
   async function declareNiko() {
-    if (!isMyTurn()) return;
+    // Can declare right after playing, even if turn has passed
     KadiGame.declareNiko(gameState, myPlayerIndex);
     renderGame();
     await Multiplayer.saveGameState(currentRoom.id, gameState, currentUser.id);
@@ -322,19 +322,27 @@
     }).join('');
 
     var actionsHtml = '';
-    if (isMe && isMyTurn() && !gameState.winner) {
-      actionsHtml = '<div class="player-actions">'
-        + '<label style="font-size:0.8rem;opacity:0.8;">Ace suit</label>'
-        + '<select id="suitChoice">'
-        + '<option value="♠">♠ Spades</option>'
-        + '<option value="♥">♥ Hearts</option>'
-        + '<option value="♦">♦ Diamonds</option>'
-        + '<option value="♣">♣ Clubs</option>'
-        + '</select>'
-        + (selectedCardIds.length > 0 ? '<button id="playSelectedBtn">▶ Play Cards</button>' : '')
-        + '<button id="drawBtn">🃏 Draw / Penalty</button>'
-        + '<button id="declareBtn">📢 Niko Kadi</button>'
-        + '</div>';
+    if (isMe && !gameState.winner) {
+      var turnActions = '';
+      if (isMyTurn()) {
+        turnActions = '<label style="font-size:0.8rem;opacity:0.8;">Ace suit</label>'
+          + '<select id="suitChoice">'
+          + '<option value="♠">♠ Spades</option>'
+          + '<option value="♥">♥ Hearts</option>'
+          + '<option value="♦">♦ Diamonds</option>'
+          + '<option value="♣">♣ Clubs</option>'
+          + '</select>'
+          + (selectedCardIds.length > 0 ? '<button id="playSelectedBtn">▶ Play Cards</button>' : '')
+          + '<button id="drawBtn">🃏 Draw / Penalty</button>';
+      }
+      // Niko Kadi can be declared right after playing, even if turn has passed
+      var nikoBtn = '';
+      if (player.hand.length <= 2 && !player.declaredNiko) {
+        nikoBtn = '<button id="declareBtn">📢 Niko Kadi</button>';
+      }
+      if (turnActions || nikoBtn) {
+        actionsHtml = '<div class="player-actions">' + turnActions + nikoBtn + '</div>';
+      }
     }
     if (isMe && gameState.winner) {
       actionsHtml = '<div class="player-actions">'

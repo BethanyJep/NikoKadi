@@ -158,6 +158,22 @@
     return true;
   }
 
+  // Cards that can never be part of a winning play: A, 2, 3, J, K, Joker.
+  // Q and 8 can win only when an answer card was auto-played alongside them
+  // (if we reach the win check with hand=0 after a Q/8, the answer was found).
+  function canWinWithCard(card) {
+    if (card.type === 'answer') return true;
+    if (card.type === 'question') return true;
+    return false;
+  }
+
+  function canWinWithCards(cards) {
+    for (var i = 0; i < cards.length; i += 1) {
+      if (!canWinWithCard(cards[i])) return false;
+    }
+    return true;
+  }
+
   function roundScore(state, winnerIndex) {
     var points = 0;
     for (var i = 0; i < state.players.length; i += 1) {
@@ -281,7 +297,7 @@
     }
 
     if (player.hand.length === 0) {
-      if (winningAllowed(state, player)) {
+      if (winningAllowed(state, player) && canWinWithCard(card)) {
         state.winner = player.name;
         var score = roundScore(state, playerIndex);
         player.score += score;
@@ -289,7 +305,11 @@
         return state;
       }
       drawCard(state, playerIndex, 1);
-      state.message = player.name + ' forgot to declare Niko Kadi and draws 1 card.';
+      if (!player.declaredNiko) {
+        state.message = player.name + ' forgot to declare Niko Kadi and draws 1 card.';
+      } else {
+        state.message = player.name + ' cannot finish with ' + card.label + ' — drew 1 penalty card.';
+      }
     }
 
     state.currentPlayer = nextPlayerIndex(state, skip);
@@ -479,7 +499,7 @@
     }
 
     if (player.hand.length === 0) {
-      if (winningAllowed(state, player)) {
+      if (winningAllowed(state, player) && canWinWithCards(cards)) {
         state.winner = player.name;
         var score = roundScore(state, playerIndex);
         player.score += score;
@@ -487,7 +507,11 @@
         return state;
       }
       drawCard(state, playerIndex, 1);
-      state.message = player.name + ' forgot to declare Niko Kadi and draws 1 card.';
+      if (!player.declaredNiko) {
+        state.message = player.name + ' forgot to declare Niko Kadi and draws 1 card.';
+      } else {
+        state.message = player.name + ' cannot finish with an action card — drew 1 penalty card.';
+      }
     }
 
     return state;

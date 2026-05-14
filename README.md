@@ -66,8 +66,9 @@ To enable it:
 - **Kickback (K):** Reverse play direction
 - **Question (Q/8):** Must answer with matching suit/rank or draw
 - **Ace:** Request any suit
-- **Niko Kadi:** Declare when you have ≤ 2 cards — required before winning
-- First player to empty their hand (with declaration) wins the round
+- **Niko Kadi declaration:** Declare immediately after playing when your hand ≤ 2 cards — you can declare even after your turn passes, but you **must** declare before playing your last card
+- **Winning cards:** Only answer cards (4–10) and question cards (Q/8 with a valid answer) can finish the game. You **cannot** win by playing A, 2, 3, J, K, or Joker as your last card.
+- First player to empty their hand (with declaration + valid winning card) wins the round
 
 ## Tests
 
