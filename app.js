@@ -5,11 +5,6 @@
 
   var namesInput = document.getElementById('playerNames');
   var startBtn = document.getElementById('startBtn');
-  var drawBtn = document.getElementById('drawBtn');
-  var declareBtn = document.getElementById('declareBtn');
-  var playSelectedBtn = document.getElementById('playSelectedBtn');
-  var nextRoundBtn = document.getElementById('nextRoundBtn');
-  var suitChoiceSelect = document.getElementById('suitChoice');
   var gameArea = document.getElementById('gameArea');
   var board = document.getElementById('board');
 
@@ -20,6 +15,22 @@
       .replace(/>/g, '&gt;')
       .replace(/"/g, '&quot;')
       .replace(/'/g, '&#39;');
+  }
+
+  function suitClass(suit) {
+    if (suit === '♥') return 'suit-hearts';
+    if (suit === '♦') return 'suit-diamonds';
+    if (suit === '♠') return 'suit-spades';
+    if (suit === '♣') return 'suit-clubs';
+    return 'suit-joker';
+  }
+
+  function cardHtml(card, classes) {
+    if (card.rank === 'JOKER') {
+      return '<span class="card-rank">★</span><span class="card-suit">JKR</span>';
+    }
+    return '<span class="card-rank">' + escapeHtml(card.rank) + '</span>'
+      + '<span class="card-suit">' + escapeHtml(card.suit) + '</span>';
   }
 
   function getNames() {
@@ -36,6 +47,7 @@
       return;
     }
     state = KadiGame.startRound(names, scores);
+    selectedCardIds = [];
     render();
   }
 
@@ -43,12 +55,11 @@
     return state.players[state.currentPlayer];
   }
 
-  function play(cardId) {
+  function toggleCard(cardId) {
     var player = currentPlayer();
     var card = player.hand.find(function (c) { return c.id === cardId; });
     if (!card) return;
 
-    // Toggle selection
     var idx = selectedCardIds.indexOf(cardId);
     if (idx >= 0) {
       selectedCardIds.splice(idx, 1);
@@ -63,13 +74,13 @@
 
     var suitChoice;
     var player = currentPlayer();
-    // Check if any selected card is an Ace for suit choice
     var hasAce = selectedCardIds.some(function (id) {
       var c = player.hand.find(function (h) { return h.id === id; });
       return c && c.rank === 'A';
     });
     if (hasAce) {
-      suitChoice = suitChoiceSelect.value;
+      var suitSelect = document.getElementById('suitChoice');
+      suitChoice = suitSelect ? suitSelect.value : '♠';
     }
 
     KadiGame.playCards(state, state.currentPlayer, selectedCardIds.slice(), suitChoice);
@@ -84,6 +95,7 @@
 
   function draw() {
     KadiGame.drawOrTakePenalty(state, state.currentPlayer);
+    selectedCardIds = [];
     render();
   }
 
@@ -94,14 +106,44 @@
 
   function playerCardList(player, active) {
     var cards = player.hand.map(function (card) {
-      if (!active) return '<span class="card hidden">🂠</span>';
+      if (!active) {
+        return '<span class="card hidden">🂠</span>';
+      }
       var isSelected = selectedCardIds.indexOf(card.id) >= 0;
-      return '<button class="card' + (isSelected ? ' selected' : '') + '" data-card-id="' + card.id + '">' + escapeHtml(card.label) + '</button>';
+      var cls = 'card ' + suitClass(card.suit) + (isSelected ? ' selected' : '');
+      return '<button class="' + cls + '" data-card-id="' + card.id + '">'
+        + cardHtml(card)
+        + '</button>';
     }).join('');
+
+    var actionsHtml = '';
+    if (active && !state.winner) {
+      actionsHtml = '<div class="player-actions">'
+        + '<label style="font-size:0.8rem;opacity:0.8;">Ace suit</label>'
+        + '<select id="suitChoice">'
+        + '<option value="♠">♠ Spades</option>'
+        + '<option value="♥">♥ Hearts</option>'
+        + '<option value="♦">♦ Diamonds</option>'
+        + '<option value="♣">♣ Clubs</option>'
+        + '</select>'
+        + (selectedCardIds.length > 0 ? '<button id="playSelectedBtn">▶ Play Cards</button>' : '')
+        + '<button id="drawBtn">🃏 Draw / Penalty</button>'
+        + '<button id="declareBtn">📢 Niko Kadi</button>'
+        + '</div>';
+    }
+    if (active && state.winner) {
+      actionsHtml = '<div class="player-actions">'
+        + '<button id="nextRoundBtn">🔄 Next Round</button>'
+        + '</div>';
+    }
+
+    var bodyHtml = active
+      ? '<div class="player-body"><div class="hand">' + cards + '</div>' + actionsHtml + '</div>'
+      : '<div class="hand">' + cards + '</div>';
 
     return '<section class="player ' + (active ? 'active' : '') + '">'
       + '<h3>' + escapeHtml(player.name) + ' <small>(' + player.hand.length + ' cards)</small></h3>'
-      + '<div class="hand">' + cards + '</div>'
+      + bodyHtml
       + '<p class="meta">Score: <strong>' + player.score + '</strong> '
       + (player.declaredNiko ? '• ✅ Niko Kadi declared' : '') + '</p>'
       + '</section>';
@@ -115,38 +157,72 @@
 
     gameArea.style.display = 'block';
     var top = KadiGame.topDiscard(state);
+    var topCls = 'card ' + suitClass(top.suit);
 
-    board.innerHTML = '<div class="status">'
-      + '<p><strong>Top card:</strong> ' + escapeHtml(top.label) + '</p>'
-      + '<p><strong>Draw pile:</strong> ' + state.drawPile.length + ' cards</p>'
-      + '<p><strong>Direction:</strong> ' + (state.direction === 1 ? '↻ Clockwise' : '↺ Counter-clockwise') + '</p>'
-      + '<p><strong>Current:</strong> ' + escapeHtml(currentPlayer().name) + '</p>'
-      + (state.pendingPenalty ? '<p class="warning"><strong>Penalty:</strong> draw ' + state.pendingPenalty.amount + ' unless you block with a matching-suit 2/3, Joker, or Ace.</p>' : '')
-      + (state.requiredSuit ? '<p><strong>Requested Suit:</strong> ' + escapeHtml(state.requiredSuit) + '</p>' : '')
+    // Position players around the table
+    var positions = assignPositions(state.players.length);
+    var slots = { top: '', left: '', right: '', bottom: '' };
+
+    state.players.forEach(function (p, i) {
+      var pos = positions[i];
+      slots[pos] += playerCardList(p, i === state.currentPlayer);
+    });
+
+    // Table center
+    var tableHtml = '<div class="table-center">'
+      + '<div class="discard-area">'
+      + '<span class="top-card-display"><span class="' + topCls + '">' + cardHtml(top) + '</span></span>'
+      + '<div class="draw-pile">' + state.drawPile.length + '<br>cards</div>'
+      + '</div>'
+      + '<div class="table-info">'
+      + '<p>' + (state.direction === 1 ? '↻' : '↺') + ' ' + escapeHtml(currentPlayer().name) + '\'s turn</p>'
+      + (state.pendingPenalty ? '<p style="color:var(--warn);">⚠ Penalty: ' + state.pendingPenalty.amount + ' cards</p>' : '')
+      + (state.requiredSuit ? '<p>Suit: ' + escapeHtml(state.requiredSuit) + '</p>' : '')
       + (state.winner ? '<p class="winner">🏆 ' + escapeHtml(state.message) + '</p>' : '<p>' + escapeHtml(state.message) + '</p>')
       + '</div>'
-      + '<div class="players">'
-      + state.players.map(function (p, i) { return playerCardList(p, i === state.currentPlayer); }).join('')
       + '</div>';
 
-    drawBtn.disabled = !!state.winner;
-    declareBtn.disabled = !!state.winner;
-    playSelectedBtn.style.display = (!state.winner && selectedCardIds.length > 0) ? 'inline-block' : 'none';
-    nextRoundBtn.style.display = state.winner ? 'inline-block' : 'none';
+    board.innerHTML = '<div class="table-layout">'
+      + '<div class="player-slot top">' + slots.top + '</div>'
+      + '<div class="player-slot left">' + slots.left + '</div>'
+      + tableHtml
+      + '<div class="player-slot right">' + slots.right + '</div>'
+      + '<div class="player-slot bottom">' + slots.bottom + '</div>'
+      + '</div>';
 
+    // Bind buttons rendered inside player actions
+    var playBtn = document.getElementById('playSelectedBtn');
+    var drawBtn = document.getElementById('drawBtn');
+    var declareBtn = document.getElementById('declareBtn');
+    var nextRoundBtn = document.getElementById('nextRoundBtn');
+
+    if (playBtn) playBtn.addEventListener('click', playSelected);
+    if (drawBtn) drawBtn.addEventListener('click', draw);
+    if (declareBtn) declareBtn.addEventListener('click', declare);
+    if (nextRoundBtn) nextRoundBtn.addEventListener('click', startRound);
+  }
+
+  function assignPositions(count) {
+    // Distribute players around the table: bottom, top, left, right
+    if (count === 2) return ['bottom', 'top'];
+    if (count === 3) return ['bottom', 'top', 'right'];
+    if (count === 4) return ['bottom', 'top', 'left', 'right'];
+    // 5+ just wrap
+    var order = ['bottom', 'top', 'left', 'right'];
+    var result = [];
+    for (var i = 0; i < count; i++) {
+      result.push(order[i % order.length]);
+    }
+    return result;
   }
 
   board.addEventListener('click', function (event) {
     var cardButton = event.target.closest('[data-card-id]');
     if (!cardButton) return;
-    play(Number(cardButton.getAttribute('data-card-id')));
+    toggleCard(Number(cardButton.getAttribute('data-card-id')));
   });
 
   startBtn.addEventListener('click', startRound);
-  drawBtn.addEventListener('click', draw);
-  declareBtn.addEventListener('click', declare);
-  playSelectedBtn.addEventListener('click', playSelected);
-  nextRoundBtn.addEventListener('click', startRound);
 
   render();
 }());

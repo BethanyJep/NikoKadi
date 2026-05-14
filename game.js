@@ -9,6 +9,7 @@
   var RANKS = ['A', '2', '3', '4', '5', '6', '7', '8', '9', '10', 'J', 'Q', 'K'];
 
   function cardType(rank) {
+    if (rank === 'A') return 'ace';
     if (rank === 'J') return 'jump';
     if (rank === 'K') return 'kickback';
     if (rank === 'Q' || rank === '8') return 'question';
@@ -118,6 +119,7 @@
   function cardMatches(card, top, requiredSuit) {
     if (!top) return true;
     if (card.rank === 'JOKER') return true;
+    if (card.rank === 'A') return true;
     if (requiredSuit) {
       return card.suit === requiredSuit || card.rank === top.rank;
     }
@@ -204,9 +206,9 @@
     if (state.pendingPenalty) {
       var top = topDiscard(state);
       var canBlock = card.rank === 'A' || card.rank === 'JOKER' ||
-        ((card.rank === '2' || card.rank === '3') && (top.suit === 'JOKER' || card.suit === top.suit));
+        ((card.rank === '2' || card.rank === '3') && (top.suit === 'JOKER' || card.suit === top.suit || card.rank === top.rank));
       if (!canBlock) {
-        state.message = player.name + ' must play a matching-suit 2/3, Joker, or Ace to block penalty.';
+        state.message = player.name + ' must play a matching 2/3, Joker, or Ace to block penalty.';
         return state;
       }
     } else if (!cardMatches(card, topDiscard(state), state.requiredSuit)) {
@@ -335,8 +337,8 @@
           state.message = 'Only penalty cards (2, 3, Joker) can be played together to block.';
           return state;
         }
-        if (pc.rank !== 'JOKER' && top.suit !== 'JOKER' && pc.suit !== top.suit) {
-          state.message = pc.label + ' does not match the suit of ' + top.label + '.';
+        if (pc.rank !== 'JOKER' && top.suit !== 'JOKER' && pc.suit !== top.suit && pc.rank !== top.rank) {
+          state.message = pc.label + ' does not match the suit or rank of ' + top.label + '.';
           return state;
         }
       }
@@ -356,17 +358,42 @@
       state.requiredSuit = null;
       state.message = player.name + ' played ' + labels.join(' + ') + ' (penalty now ' + totalPenalty + ')';
     } else {
-      // Normal multi-card play: all cards must share the same rank
+      // Normal multi-card play
       var firstCard = cards[0];
       if (!cardMatches(firstCard, top, state.requiredSuit)) {
         state.message = firstCard.label + ' does not match the top card.';
         return state;
       }
-      for (var k = 1; k < cards.length; k += 1) {
-        if (cards[k].rank !== firstCard.rank && cards[k].rank !== 'JOKER') {
-          state.message = 'All cards must be the same rank to play together.';
-          return state;
+
+      // Determine if this is a valid multi-card combination:
+      // 1) All same rank (e.g. 7♥ + 7♠)
+      // 2) All question cards (Q/8) with suit chaining between consecutive cards
+      var allSameRank = cards.every(function (c) {
+        return c.rank === firstCard.rank || c.rank === 'JOKER';
+      });
+
+      var allQuestion = cards.every(function (c) {
+        return c.type === 'question';
+      });
+
+      var questionChainValid = false;
+      if (allQuestion && !allSameRank) {
+        // Check suit chain: each consecutive pair must share a suit
+        questionChainValid = true;
+        for (var qc = 1; qc < cards.length; qc += 1) {
+          if (cards[qc].suit !== cards[qc - 1].suit) {
+            // Check if they share rank instead (e.g. Q♠ Q♥ both Q)
+            if (cards[qc].rank !== cards[qc - 1].rank) {
+              questionChainValid = false;
+              break;
+            }
+          }
         }
+      }
+
+      if (!allSameRank && !questionChainValid) {
+        state.message = 'Cards must share the same rank, or be Q/8 with connecting suits.';
+        return state;
       }
 
       var skip = 0;
