@@ -25,8 +25,11 @@
   }
 
   function cardPoints(card) {
-    if (card.rank === 'JOKER') return 20;
-    if (['10', 'J', 'Q', 'K', 'A'].indexOf(card.rank) >= 0) return 10;
+    if (card.rank === 'JOKER') return 500;
+    if (card.rank === 'A') return 100;
+    if (card.rank === '2') return 75;
+    if (card.rank === '3') return 50;
+    if (['10', 'J', 'Q', 'K'].indexOf(card.rank) >= 0) return 10;
     return Number(card.rank);
   }
 
@@ -80,10 +83,13 @@
     return playerCount <= 3 ? 4 : 3;
   }
 
-  function createPlayers(names, scoreBoard) {
-    return names.map(function (name) {
+  function createPlayers(playerData, scoreBoard) {
+    return playerData.map(function (item) {
+      var name = typeof item === 'string' ? item : item.name;
+      var userId = typeof item === 'string' ? null : (item.userId || null);
       return {
         name: name,
+        userId: userId,
         hand: [],
         declaredNiko: false,
         score: scoreBoard[name] || 0
@@ -216,6 +222,9 @@
       return state;
     }
 
+    var previousTop = topDiscard(state);
+    var previousRequiredSuit = state.requiredSuit;
+
     player.hand.splice(cardPos, 1);
     state.discardPile.push(card);
     state.requiredSuit = null;
@@ -232,6 +241,13 @@
         rank: card.rank,
         amount: amount
       };
+      if (card.rank === 'JOKER') {
+        if (previousTop && previousTop.suit !== 'JOKER') {
+          state.requiredSuit = previousTop.suit;
+        } else if (previousRequiredSuit) {
+          state.requiredSuit = previousRequiredSuit;
+        }
+      }
     } else if (state.pendingPenalty && card.rank === 'A') {
       state.pendingPenalty = null;
       state.requiredSuit = suitChoice || topDiscard(state).suit;
@@ -288,7 +304,10 @@
       drawCard(state, playerIndex, state.pendingPenalty.amount);
       state.message = state.players[playerIndex].name + ' took ' + state.pendingPenalty.amount + ' penalty cards.';
       state.pendingPenalty = null;
-      state.requiredSuit = null;
+      var currentTop = topDiscard(state);
+      if (!currentTop || currentTop.rank !== 'JOKER') {
+        state.requiredSuit = null;
+      }
     } else {
       drawCard(state, playerIndex, 1);
       state.message = state.players[playerIndex].name + ' drew a card.';
@@ -355,7 +374,13 @@
 
       var lastCard = cards[cards.length - 1];
       state.pendingPenalty = { rank: lastCard.rank, amount: totalPenalty };
-      state.requiredSuit = null;
+      if (lastCard.rank === 'JOKER') {
+        if (top && top.suit !== 'JOKER') {
+          state.requiredSuit = top.suit;
+        }
+      } else {
+        state.requiredSuit = null;
+      }
       state.message = player.name + ' played ' + labels.join(' + ') + ' (penalty now ' + totalPenalty + ')';
     } else {
       // Normal multi-card play
@@ -422,6 +447,10 @@
       var last = cards[cards.length - 1];
       if (last.rank === 'A') {
         state.requiredSuit = suitChoice || last.suit;
+      } else if (last.rank === 'JOKER') {
+        if (top && top.suit !== 'JOKER') {
+          state.requiredSuit = top.suit;
+        }
       }
 
       // Handle question on last card

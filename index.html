@@ -9,20 +9,67 @@
   <body>
     <main class="app">
       <h1>🃏 Niko Kadi</h1>
-      <p class="subtitle">Fast online-style Kadi for 2+ players with scoring and a full 54-card deck.</p>
 
-      <section class="controls">
-        <label for="playerNames">Player names (comma-separated)</label>
-        <input id="playerNames" value="Bethany, Niko" />
-        <button id="startBtn">Start Game</button>
+      <!-- Auth Screen -->
+      <section id="authScreen">
+        <div class="screen-card">
+          <p class="subtitle">Play Kadi online with friends — anywhere, anytime.</p>
+          <label for="displayName">Choose a display name</label>
+          <input id="displayName" placeholder="Your name…" maxlength="20" />
+          <button id="authBtn">Play</button>
+          <p id="authError" class="error-msg" style="display:none;"></p>
+        </div>
       </section>
 
-      <section id="gameArea" style="display: none;">
+      <!-- Lobby Screen -->
+      <section id="lobbyScreen" style="display:none;">
+        <div class="screen-card">
+          <h2>Game Lobby</h2>
+          <p class="greeting">Welcome, <span id="lobbyName"></span>!</p>
+          <div class="lobby-actions">
+            <button id="createRoomBtn">🏠 Create Room</button>
+            <div class="divider">— or join a friend —</div>
+            <input id="roomCodeInput" placeholder="Enter room code…" maxlength="6" style="text-transform:uppercase;" />
+            <button id="joinRoomBtn">🚪 Join Room</button>
+          </div>
+          <p id="lobbyError" class="error-msg" style="display:none;"></p>
+        </div>
+      </section>
+
+      <!-- Room Screen -->
+      <section id="roomScreen" style="display:none;">
+        <div class="screen-card">
+          <h2>Room Code</h2>
+          <div class="room-code" id="roomCodeDisplay"></div>
+          <p class="hint">Share this code with friends so they can join!</p>
+          <h3>Players</h3>
+          <ul id="roomPlayerList" class="player-list"></ul>
+          <div class="room-actions">
+            <button id="startGameBtn" style="display:none;">🎮 Start Game</button>
+            <button id="leaveRoomBtn" class="btn-secondary">Leave Room</button>
+          </div>
+          <p id="roomError" class="error-msg" style="display:none;"></p>
+        </div>
+      </section>
+
+      <!-- Game Screen -->
+      <section id="gameScreen" style="display:none;">
         <div id="board"></div>
+        <div class="game-footer">
+          <button id="backToLobbyBtn" class="btn-secondary">🚪 Leave Game</button>
+        </div>
       </section>
+
+      <!-- Toast container -->
+      <div id="toastContainer"></div>
     </main>
 
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="config.js"></script>
     <script src="game.js"></script>
+    <script src="auth.js"></script>
+    <script src="lobby.js"></script>
+    <script src="multiplayer.js"></script>
     <script src="app.js"></script>
   </body>
 </html>
