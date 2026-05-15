@@ -210,6 +210,7 @@
       currentPlayer: 0,
       direction: 1,
       pendingPenalty: null,
+      pendingQuestion: null,
       requiredSuit: null,
       winner: null,
       message: players[0].name + ' starts!'
@@ -218,6 +219,7 @@
 
   function playCard(state, playerIndex, cardId, suitChoice) {
     if (state.winner) return state;
+    if (state.pendingQuestion) return state;
     if (playerIndex !== state.currentPlayer) return state;
 
     var player = state.players[playerIndex];
@@ -285,10 +287,8 @@
       if (card.type === 'question') {
         var answers = availableAnswerCards(player, card);
         if (answers.length > 0) {
-          var answer = answers[0];
-          player.hand = player.hand.filter(function (c) { return c.id !== answer.id; });
-          state.discardPile.push(answer);
-          state.message += ' + answer ' + answer.label;
+          state.pendingQuestion = { questionCard: card, playerIndex: playerIndex, skip: skip };
+          return state;
         } else {
           drawCard(state, playerIndex, 1);
           state.message += ' but had no answer, so drew 1 card.';
@@ -297,6 +297,7 @@
     }
 
     if (player.hand.length === 0) {
+      var wasDeclared = player.declaredNiko;
       if (winningAllowed(state, player) && canWinWithCard(card)) {
         state.winner = player.name;
         var score = roundScore(state, playerIndex);
@@ -305,11 +306,12 @@
         return state;
       }
       drawCard(state, playerIndex, 1);
-      if (!player.declaredNiko) {
+      if (!wasDeclared) {
         state.message = player.name + ' forgot to declare Niko Kadi and draws 1 card.';
       } else {
         state.message = player.name + ' cannot finish with ' + card.label + ' — drew 1 penalty card.';
       }
+      player.declaredNiko = false;
     }
 
     state.currentPlayer = nextPlayerIndex(state, skip);
@@ -318,11 +320,14 @@
 
   function drawOrTakePenalty(state, playerIndex) {
     if (state.winner) return state;
+    if (state.pendingQuestion) return state;
     if (playerIndex !== state.currentPlayer) return state;
+
+    var player = state.players[playerIndex];
 
     if (state.pendingPenalty) {
       drawCard(state, playerIndex, state.pendingPenalty.amount);
-      state.message = state.players[playerIndex].name + ' took ' + state.pendingPenalty.amount + ' penalty cards.';
+      state.message = player.name + ' took ' + state.pendingPenalty.amount + ' penalty cards.';
       state.pendingPenalty = null;
       var currentTop = topDiscard(state);
       if (!currentTop || currentTop.rank !== 'JOKER') {
@@ -330,9 +335,10 @@
       }
     } else {
       drawCard(state, playerIndex, 1);
-      state.message = state.players[playerIndex].name + ' drew a card.';
+      state.message = player.name + ' drew a card.';
     }
 
+    player.declaredNiko = false;
     state.currentPlayer = nextPlayerIndex(state, 0);
     return state;
   }
@@ -349,6 +355,7 @@
 
   function playCards(state, playerIndex, cardIds, suitChoice) {
     if (state.winner) return state;
+    if (state.pendingQuestion) return state;
     if (playerIndex !== state.currentPlayer) return state;
     if (!cardIds || cardIds.length === 0) return state;
 
@@ -477,10 +484,8 @@
       if (last.type === 'question') {
         var answers = availableAnswerCards(player, last);
         if (answers.length > 0) {
-          var answer = answers[0];
-          player.hand = player.hand.filter(function (c) { return c.id !== answer.id; });
-          state.discardPile.push(answer);
-          state.message += ' + answer ' + answer.label;
+          state.pendingQuestion = { questionCard: last, playerIndex: playerIndex, skip: skip };
+          return state;
         } else {
           drawCard(state, playerIndex, 1);
           state.message += ' but had no answer, so drew 1 card.';
@@ -499,6 +504,7 @@
     }
 
     if (player.hand.length === 0) {
+      var wasDeclared = player.declaredNiko;
       if (winningAllowed(state, player) && canWinWithCards(cards)) {
         state.winner = player.name;
         var score = roundScore(state, playerIndex);
@@ -507,13 +513,90 @@
         return state;
       }
       drawCard(state, playerIndex, 1);
-      if (!player.declaredNiko) {
+      if (!wasDeclared) {
         state.message = player.name + ' forgot to declare Niko Kadi and draws 1 card.';
       } else {
         state.message = player.name + ' cannot finish with an action card — drew 1 penalty card.';
       }
+      player.declaredNiko = false;
     }
 
+    return state;
+  }
+
+  function answerQuestion(state, playerIndex, answerCardIds) {
+    if (!state.pendingQuestion) return state;
+    if (playerIndex !== state.pendingQuestion.playerIndex) return state;
+    if (!answerCardIds || answerCardIds.length === 0) return state;
+
+    var player = state.players[playerIndex];
+    var qCard = state.pendingQuestion.questionCard;
+    var skip = state.pendingQuestion.skip || 0;
+
+    // Resolve answer cards from hand
+    var answerCards = [];
+    for (var i = 0; i < answerCardIds.length; i += 1) {
+      var pos = player.hand.findIndex(function (c) { return c.id === answerCardIds[i]; });
+      if (pos < 0) return state;
+      answerCards.push(player.hand[pos]);
+    }
+
+    // All must be answer-type cards
+    for (var a = 0; a < answerCards.length; a += 1) {
+      if (answerCards[a].type !== 'answer') {
+        state.message = 'Only answer cards (4\u201310) can be used to answer.';
+        return state;
+      }
+    }
+
+    // All must share the same rank
+    var answerRank = answerCards[0].rank;
+    for (var r = 1; r < answerCards.length; r += 1) {
+      if (answerCards[r].rank !== answerRank) {
+        state.message = 'All answer cards must be the same number.';
+        return state;
+      }
+    }
+
+    // At least one must match the question card's suit
+    var suitMatch = answerCards.some(function (c) {
+      return c.suit === qCard.suit;
+    });
+    if (!suitMatch) {
+      state.message = 'At least one answer must match the question card suit (' + qCard.suit + ').';
+      return state;
+    }
+
+    // Discard answer cards
+    var labels = [];
+    for (var d = 0; d < answerCards.length; d += 1) {
+      player.hand = player.hand.filter(function (c) { return c.id !== answerCards[d].id; });
+      state.discardPile.push(answerCards[d]);
+      labels.push(answerCards[d].label);
+    }
+    state.message = player.name + ' answered with ' + labels.join(' + ');
+    state.pendingQuestion = null;
+
+    // Win check
+    if (player.hand.length === 0) {
+      var wasDeclared = player.declaredNiko;
+      if (winningAllowed(state, player) && canWinWithCard(qCard)) {
+        state.winner = player.name;
+        var score = roundScore(state, playerIndex);
+        player.score += score;
+        state.message = player.name + ' wins the round and earns ' + score + ' points!';
+        return state;
+      }
+      drawCard(state, playerIndex, 1);
+      if (!wasDeclared) {
+        state.message = player.name + ' forgot to declare Niko Kadi and draws 1 card.';
+      } else {
+        state.message = player.name + ' cannot win \u2014 drew 1 penalty card.';
+      }
+      player.declaredNiko = false;
+    }
+
+    state.currentPlayer = nextPlayerIndex(state, skip);
     return state;
   }
 
@@ -527,6 +610,8 @@
     playCards: playCards,
     drawOrTakePenalty: drawOrTakePenalty,
     declareNiko: declareNiko,
+    answerQuestion: answerQuestion,
+    availableAnswerCards: availableAnswerCards,
     cardMatches: cardMatches,
     dealCount: dealCount,
     penaltyValue: penaltyValue,

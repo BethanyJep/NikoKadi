@@ -227,6 +227,11 @@
     return gameState && gameState.currentPlayer === myPlayerIndex;
   }
 
+  function isMyPendingQuestion() {
+    return gameState && gameState.pendingQuestion &&
+      gameState.pendingQuestion.playerIndex === myPlayerIndex;
+  }
+
   // ── Card helpers ──
   function suitClass(suit) {
     if (suit === '♥') return 'suit-hearts';
@@ -246,7 +251,7 @@
 
   // ── Game actions ──
   function toggleCard(cardId) {
-    if (!isMyTurn()) return;
+    if (!isMyTurn() && !isMyPendingQuestion()) return;
     var player = gameState.players[myPlayerIndex];
     if (!player) return;
     var card = player.hand.find(function (c) { return c.id === cardId; });
@@ -259,6 +264,7 @@
 
   async function playSelected() {
     if (!isMyTurn() || selectedCardIds.length === 0) return;
+    if (gameState.pendingQuestion) return;
 
     var suitChoice;
     var player = gameState.players[myPlayerIndex];
@@ -285,6 +291,7 @@
 
   async function drawCard() {
     if (!isMyTurn()) return;
+    if (gameState.pendingQuestion) return;
     KadiGame.drawOrTakePenalty(gameState, myPlayerIndex);
     selectedCardIds = [];
     renderGame();
@@ -294,6 +301,20 @@
   async function declareNiko() {
     // Can declare right after playing, even if turn has passed
     KadiGame.declareNiko(gameState, myPlayerIndex);
+    renderGame();
+    await Multiplayer.saveGameState(currentRoom.id, gameState, currentUser.id);
+  }
+
+  async function submitAnswer() {
+    if (!isMyPendingQuestion() || selectedCardIds.length === 0) return;
+    KadiGame.answerQuestion(gameState, myPlayerIndex, selectedCardIds.slice());
+    selectedCardIds = [];
+
+    if (gameState.winner) {
+      scores[gameState.winner] = gameState.players.find(function (p) {
+        return p.name === gameState.winner;
+      }).score;
+    }
     renderGame();
     await Multiplayer.saveGameState(currentRoom.id, gameState, currentUser.id);
   }
@@ -323,25 +344,40 @@
 
     var actionsHtml = '';
     if (isMe && !gameState.winner) {
-      var turnActions = '';
-      if (isMyTurn()) {
-        turnActions = '<label style="font-size:0.8rem;opacity:0.8;">Ace suit</label>'
-          + '<select id="suitChoice">'
-          + '<option value="♠">♠ Spades</option>'
-          + '<option value="♥">♥ Hearts</option>'
-          + '<option value="♦">♦ Diamonds</option>'
-          + '<option value="♣">♣ Clubs</option>'
-          + '</select>'
-          + (selectedCardIds.length > 0 ? '<button id="playSelectedBtn">▶ Play Cards</button>' : '')
-          + '<button id="drawBtn">🃏 Draw / Penalty</button>';
-      }
-      // Niko Kadi can be declared right after playing, even if turn has passed
-      var nikoBtn = '';
-      if (player.hand.length <= 2 && !player.declaredNiko) {
-        nikoBtn = '<button id="declareBtn">📢 Niko Kadi</button>';
-      }
-      if (turnActions || nikoBtn) {
-        actionsHtml = '<div class="player-actions">' + turnActions + nikoBtn + '</div>';
+      if (isMyPendingQuestion()) {
+        // Answer mode: player must choose answer cards for Q/8
+        var qCard = gameState.pendingQuestion.questionCard;
+        var nikoBtn = '';
+        if (player.hand.length <= 2 && !player.declaredNiko) {
+          nikoBtn = '<button id="declareBtn">📢 Niko Kadi</button>';
+        }
+        actionsHtml = '<div class="player-actions">'
+          + '<p style="font-size:0.85rem;margin:0 0 0.3rem;">Answer ' + escapeHtml(qCard.label)
+          + ' — pick card(s) of the same number</p>'
+          + nikoBtn
+          + (selectedCardIds.length > 0 ? '<button id="submitAnswerBtn">✓ Submit Answer</button>' : '')
+          + '</div>';
+      } else {
+        var turnActions = '';
+        if (isMyTurn() && !gameState.pendingQuestion) {
+          turnActions = '<label style="font-size:0.8rem;opacity:0.8;">Ace suit</label>'
+            + '<select id="suitChoice">'
+            + '<option value="♠">♠ Spades</option>'
+            + '<option value="♥">♥ Hearts</option>'
+            + '<option value="♦">♦ Diamonds</option>'
+            + '<option value="♣">♣ Clubs</option>'
+            + '</select>'
+            + (selectedCardIds.length > 0 ? '<button id="playSelectedBtn">▶ Play Cards</button>' : '')
+            + '<button id="drawBtn">🃏 Draw / Penalty</button>';
+        }
+        // Niko Kadi can be declared right after playing, even if turn has passed
+        var nikoBtn2 = '';
+        if (player.hand.length <= 2 && !player.declaredNiko) {
+          nikoBtn2 = '<button id="declareBtn">📢 Niko Kadi</button>';
+        }
+        if (turnActions || nikoBtn2) {
+          actionsHtml = '<div class="player-actions">' + turnActions + nikoBtn2 + '</div>';
+        }
       }
     }
     if (isMe && gameState.winner) {
@@ -401,7 +437,15 @@
 
     var cpName = gameState.players[gameState.currentPlayer]
       ? gameState.players[gameState.currentPlayer].name : '?';
-    var turnText = isMyTurn() ? 'Your turn!' : escapeHtml(cpName) + "'s turn";
+    var turnText;
+    if (gameState.pendingQuestion) {
+      var qPlayer = gameState.players[gameState.pendingQuestion.playerIndex];
+      turnText = isMyPendingQuestion()
+        ? 'Choose your answer!'
+        : escapeHtml(qPlayer ? qPlayer.name : '?') + ' is answering…';
+    } else {
+      turnText = isMyTurn() ? 'Your turn!' : escapeHtml(cpName) + "'s turn";
+    }
 
     var tableHtml = '<div class="table-center">'
       + '<div class="discard-area">'
@@ -429,11 +473,13 @@
     var drawBtn = document.getElementById('drawBtn');
     var declareBtn = document.getElementById('declareBtn');
     var nextRoundBtn = document.getElementById('nextRoundBtn');
+    var submitAnswerBtn = document.getElementById('submitAnswerBtn');
 
     if (playBtn) playBtn.addEventListener('click', playSelected);
     if (drawBtn) drawBtn.addEventListener('click', drawCard);
     if (declareBtn) declareBtn.addEventListener('click', declareNiko);
     if (nextRoundBtn) nextRoundBtn.addEventListener('click', nextRound);
+    if (submitAnswerBtn) submitAnswerBtn.addEventListener('click', submitAnswer);
   }
 
   // ── Event delegation for card clicks ──
