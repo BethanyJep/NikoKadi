@@ -325,8 +325,30 @@
   function fanVars(n) {
     var ang = n <= 1 ? 0 : Math.min(6, 34 / (n - 1));
     var lap = n <= 6 ? 0.3 : n <= 10 ? 0.54 : n <= 14 ? 0.68 : 0.78;
-    return '--n:' + n + ';--ang:' + ang.toFixed(2) + 'deg;--lap:' + lap;
+    // Cap the sag of the outer cards so a long hand doesn't cover the action buttons
+    var half = (n - 1) / 2;
+    var drop = half > 0 ? Math.min(1.6, 36 / (half * half)) : 0;
+    return '--n:' + n + ';--ang:' + ang.toFixed(2) + 'deg;--lap:' + lap + ';--drop:' + drop.toFixed(3) + 'px';
   }
+
+  // Squeeze a hand's overlap until it fits its seat (long hands after penalties, narrow phones)
+  function fitHands() {
+    document.querySelectorAll('#board .hand').forEach(function (hand) {
+      var cards = hand.querySelectorAll('.card');
+      var n = cards.length;
+      if (n < 2 || getComputedStyle(hand).position === 'absolute') return;
+      var seat = hand.closest('.player');
+      var cw = cards[0].getBoundingClientRect().width;
+      if (!seat || !cw) return;
+      var base = parseFloat(hand.dataset.baseLap || getComputedStyle(hand).getPropertyValue('--lap'));
+      hand.dataset.baseLap = base;
+      var room = seat.clientWidth - 16 - cw * 0.25;
+      var need = 1 - (room - cw) / ((n - 1) * cw);
+      hand.style.setProperty('--lap', Math.min(0.92, Math.max(base, need)).toFixed(3));
+    });
+  }
+
+  window.addEventListener('resize', fitHands);
 
   function fanOffset(i, n) {
     return '--o:' + (i - (n - 1) / 2);
@@ -607,6 +629,13 @@
       + '</div>';
 
     var confetti = gameState.winner ? confettiHtml() : '';
+    // Keep keyboard focus on the same control across re-renders
+    var focused = document.activeElement;
+    var focusSel = null;
+    if (focused && board.contains(focused)) {
+      if (focused.dataset && focused.dataset.cardId) focusSel = '[data-card-id="' + focused.dataset.cardId + '"]';
+      else if (focused.id) focusSel = '#' + focused.id;
+    }
     board.innerHTML = confetti + statusHtml + '<div class="table-layout">'
       + '<div class="player-slot top">' + slotContent.top + '</div>'
       + '<div class="player-slot left">' + slotContent.left + '</div>'
@@ -614,6 +643,12 @@
       + '<div class="player-slot right">' + slotContent.right + '</div>'
       + '<div class="player-slot bottom">' + slotContent.bottom + '</div>'
       + '</div>';
+
+    fitHands();
+    if (focusSel) {
+      var again = board.querySelector(focusSel);
+      if (again) again.focus({ preventScroll: true });
+    }
 
     announce(turnText + '. ' + gameState.message
       + (gameState.pendingPenalty ? ' Penalty: ' + gameState.pendingPenalty.amount + ' cards.' : ''));

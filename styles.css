@@ -424,7 +424,7 @@ button:disabled { opacity: 0.45; cursor: not-allowed; transform: none; box-shado
 .hand .card {
   flex: none;
   transform-origin: 50% 130%;
-  transform: translateY(calc(var(--o) * var(--o) * 1.6px)) rotate(calc(var(--o) * var(--ang)));
+  transform: translateY(calc(var(--o) * var(--o) * var(--drop, 1.6px))) rotate(calc(var(--o) * var(--ang)));
 }
 
 .hand .card + .card { margin-left: calc(var(--cw) * var(--lap) * -1); }
@@ -568,13 +568,13 @@ button.card { min-height: 0; cursor: pointer; }
 /* Hover / selected: the card is slid up out of the hand */
 button.card:hover,
 .card.selected {
-  transform: translateY(calc(var(--o) * var(--o) * 1.6px - 14px)) rotate(calc(var(--o) * var(--ang)));
+  transform: translateY(calc(var(--o) * var(--o) * var(--drop, 1.6px) - 14px)) rotate(calc(var(--o) * var(--ang)));
   box-shadow: 0 10px 14px rgba(0, 0, 0, 0.45);
   z-index: 3;
 }
 
 .card.selected {
-  transform: translateY(calc(var(--o) * var(--o) * 1.6px - 30px)) rotate(calc(var(--o) * var(--ang)));
+  transform: translateY(calc(var(--o) * var(--o) * var(--drop, 1.6px) - 30px)) rotate(calc(var(--o) * var(--ang)));
   outline: 3px solid var(--saffron);
   outline-offset: 2px;
 }
