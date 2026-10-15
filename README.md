@@ -12,7 +12,7 @@ An online multiplayer version of Kadi — play with friends from anywhere.
 
 1. Visit the [live site](https://bethanyjep.github.io/NikoKadi/) (hosted on GitHub Pages)
 2. Enter a display name — no sign-up needed (anonymous auth)
-3. **Create a room** to get a 6-character room code, or **join** with a friend's code
+3. **Create a room** to get a 6-character room code, then copy it or share it on WhatsApp (the link pre-fills the code), or **join** with a friend's code
 4. Once 2+ players are in, the host starts the game (rooms hold up to 4 players)
 5. Take turns playing cards — the game syncs in real time via Supabase
 
@@ -22,18 +22,26 @@ An online multiplayer version of Kadi — play with friends from anywhere.
 |:---:|:---:|
 | ![Enter a display name](docs/screenshots/01-join.png) | ![Game lobby with create and join options](docs/screenshots/02-lobby.png) |
 
-| 3. Wait for friends, then start | 4. Play |
+| 3. Share the code, then start | 4. Play |
 |:---:|:---:|
-| ![Room with code and player list](docs/screenshots/03-room.png) | ![Game board](docs/screenshots/04-game-board.png) |
+| ![Room with code, share buttons and player list](docs/screenshots/03-room.png) | ![Game board](docs/screenshots/04-game-board.png) |
+
+The game is built for phones — every opponent stays on screen and your hand sits above its action buttons:
+
+<p align="center">
+  <img src="docs/screenshots/05-mobile-game.png" alt="Niko Kadi on a phone" width="320" />
+</p>
 
 ### The game screen
 
-- **Table centre:** the top card of the discard pile, the draw pile (with its card count), whose turn it is and the play direction (↻ / ↺), any pending penalty, any required suit, and the latest game message.
+- **Status strip:** one bar above the table that always states what's going on — whose turn it is (or "Answer the Q♠"), any pending **penalty**, any requested **suit**, and the play direction (↻ / ↺).
+- **Table centre:** the top card of the discard pile, the draw pile (with its card count), and the latest game message.
+- **? Rules:** a quick cheat sheet is always one tap away in the top-right corner.
 - **Opponents:** shown with face-down cards, their card count, score, and a **TURN** badge for whoever is up. You are always at the bottom.
 - **Your hand:** click one or more cards to select them (they lift and highlight), then use the buttons beside your hand:
   - **▶ Play Cards** — play the selected card(s)
   - **🃏 Draw / Penalty** — draw one card, or take the stacked penalty if one is pending
-  - **Ace suit** — pick the suit to request when you play an Ace
+  - **Ace suit** — appears when an Ace is selected, to pick the suit to request
   - **📢 Niko Kadi** — declare when you have 2 or fewer cards left
   - **✓ Submit Answer** — answer a Question card (see below)
 - **Next Round** appears when someone wins; scores carry over between rounds.
