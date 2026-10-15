@@ -53,6 +53,14 @@
     }, 3000);
   }
 
+  var lastAnnouncement = '';
+  function announce(text) {
+    var el = document.getElementById('srStatus');
+    if (!el || text === lastAnnouncement) return;
+    lastAnnouncement = text;
+    el.textContent = text;
+  }
+
   // ── Auth Screen ──
   async function handleAuth() {
     var name = document.getElementById('displayName').value.trim();
@@ -335,10 +343,10 @@
     var isCurrent = playerIndex === gameState.currentPlayer;
 
     var cards = player.hand.map(function (card) {
-      if (!isMe) return '<span class="card hidden">🂠</span>';
+      if (!isMe) return '<span class="card hidden" aria-hidden="true"></span>';
       var isSelected = selectedCardIds.indexOf(card.id) >= 0;
       var cls = 'card ' + suitClass(card.suit) + (isSelected ? ' selected' : '');
-      return '<button class="' + cls + '" data-card-id="' + card.id + '">'
+      return '<button class="' + cls + '" data-card-id="' + card.id + '" aria-pressed="' + isSelected + '">'
         + cardHtml(card) + '</button>';
     }).join('');
 
@@ -360,7 +368,7 @@
       } else {
         var turnActions = '';
         if (isMyTurn() && !gameState.pendingQuestion) {
-          turnActions = '<label style="font-size:0.8rem;opacity:0.8;">Ace suit</label>'
+          turnActions = '<label for="suitChoice" class="field-label">Ace suit</label>'
             + '<select id="suitChoice">'
             + '<option value="♠">♠ Spades</option>'
             + '<option value="♥">♥ Hearts</option>'
@@ -468,6 +476,9 @@
       + '<div class="player-slot right">' + slotContent.right + '</div>'
       + '<div class="player-slot bottom">' + slotContent.bottom + '</div>'
       + '</div>';
+
+    announce(turnText + '. ' + gameState.message
+      + (gameState.pendingPenalty ? ' Penalty: ' + gameState.pendingPenalty.amount + ' cards.' : ''));
 
     var playBtn = document.getElementById('playSelectedBtn');
     var drawBtn = document.getElementById('drawBtn');
