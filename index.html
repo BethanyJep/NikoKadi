@@ -12,6 +12,7 @@
   <body>
     <main class="app">
       <h1>Niko Kadi</h1>
+      <button id="rulesBtn" class="btn-secondary rules-btn" type="button" aria-haspopup="dialog">? Rules</button>
 
       <!-- Auth Screen -->
       <section id="authScreen">
@@ -66,6 +67,24 @@
           <button id="backToLobbyBtn" class="btn-secondary">🚪 Leave Game</button>
         </div>
       </section>
+
+      <dialog id="rulesDialog" class="rules-dialog" aria-labelledby="rulesTitle">
+        <h2 id="rulesTitle">How to play Kadi</h2>
+        <p><strong>On your turn</strong> play a card that matches the top card by <strong>suit or rank</strong>, or draw one. Same-rank cards can go down together.</p>
+        <table class="rules-table">
+          <tbody>
+            <tr><th scope="row">2 / 3</th><td>Next player draws 2 / 3 — unless they block with a matching 2 or 3, a Joker or an Ace. Penalties stack.</td></tr>
+            <tr><th scope="row">Joker</th><td>Draw 5. Plays on anything.</td></tr>
+            <tr><th scope="row">A</th><td>Plays on anything and lets you <strong>request a suit</strong>. Also cancels a penalty.</td></tr>
+            <tr><th scope="row">J</th><td>Jump — skips the next player.</td></tr>
+            <tr><th scope="row">K</th><td>Kickback — reverses direction.</td></tr>
+            <tr><th scope="row">Q / 8</th><td>Question — answer it right away with a 4–10 of the same suit, or draw 1.</td></tr>
+          </tbody>
+        </table>
+        <p><strong>Niko Kadi:</strong> with 2 cards or fewer, tap <strong>📢 Niko Kadi</strong> before you play your last card.</p>
+        <p><strong>To win,</strong> go out on a 4–10, or a Q/8 you answered. You can't finish on A, 2, 3, J, K or a Joker.</p>
+        <form method="dialog"><button class="btn-secondary" autofocus>Got it</button></form>
+      </dialog>
 
       <!-- Toast container -->
       <div id="toastContainer" aria-live="polite"></div>

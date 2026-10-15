@@ -391,13 +391,18 @@
       } else {
         var turnActions = '';
         if (isMyTurn() && !gameState.pendingQuestion) {
-          turnActions = '<label for="suitChoice" class="field-label">Ace suit</label>'
-            + '<select id="suitChoice">'
-            + '<option value="♠">♠ Spades</option>'
-            + '<option value="♥">♥ Hearts</option>'
-            + '<option value="♦">♦ Diamonds</option>'
-            + '<option value="♣">♣ Clubs</option>'
-            + '</select>'
+          var aceSelected = player.hand.some(function (c) {
+            return c.rank === 'A' && selectedCardIds.indexOf(c.id) >= 0;
+          });
+          turnActions = (aceSelected
+              ? '<label for="suitChoice" class="field-label">Request a suit with your Ace</label>'
+                + '<select id="suitChoice">'
+                + '<option value="♠">♠ Spades</option>'
+                + '<option value="♥">♥ Hearts</option>'
+                + '<option value="♦">♦ Diamonds</option>'
+                + '<option value="♣">♣ Clubs</option>'
+                + '</select>'
+              : '')
             + (selectedCardIds.length > 0 ? '<button id="playSelectedBtn">▶ Play Cards</button>' : '')
             + '<button id="drawBtn">🃏 Draw / Penalty</button>';
         }
@@ -565,6 +570,9 @@
     if (e.key === 'Enter') handleJoinRoom();
   });
   document.getElementById('startGameBtn').addEventListener('click', handleStartGame);
+  document.getElementById('rulesBtn').addEventListener('click', function () {
+    document.getElementById('rulesDialog').showModal();
+  });
   document.getElementById('copyCodeBtn').addEventListener('click', handleCopyCode);
   document.getElementById('leaveRoomBtn').addEventListener('click', handleLeaveRoom);
   document.getElementById('backToLobbyBtn').addEventListener('click', handleLeaveRoom);
