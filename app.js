@@ -429,7 +429,9 @@
     var turnBadge = isCurrent && !gameState.winner
       ? '<span class="turn-badge">TURN</span>' : '';
 
-    return '<section class="player ' + (isMe ? 'active' : '') + '">'
+    var seatCls = 'seat-' + (playerIndex % 4);
+    var currentCls = isCurrent && !gameState.winner ? ' current' : '';
+    return '<section class="player ' + seatCls + currentCls + (isMe ? ' active' : '') + '">'
       + '<h3>' + escapeHtml(player.name) + (isMe ? ' (you)' : '')
       + ' <small>(' + player.hand.length + ' cards)</small> ' + turnBadge + '</h3>'
       + bodyHtml
@@ -447,6 +449,18 @@
       positions[i] = slots[adjusted % slots.length];
     }
     return positions;
+  }
+
+  // Deterministic pieces so re-renders don't reshuffle the burst
+  function confettiHtml() {
+    var colors = ['--pink', '--orange', '--yellow', '--teal', '--violet'];
+    var bits = '';
+    for (var i = 0; i < 36; i++) {
+      bits += '<i style="--x:' + ((i * 29) % 100) + 'vw;--c:var(' + colors[i % colors.length]
+        + ');--t:' + (2.6 + (i % 5) * 0.5) + 's;--d:' + ((i % 9) * 0.12) + 's;--r:'
+        + (360 + (i % 7) * 90) + 'deg"></i>';
+    }
+    return '<div class="confetti" aria-hidden="true">' + bits + '</div>';
   }
 
   // ── Status strip: the one place the current obligation is stated ──
@@ -528,7 +542,8 @@
       + '</div>'
       + '</div>';
 
-    board.innerHTML = statusHtml + '<div class="table-layout">'
+    var confetti = gameState.winner ? confettiHtml() : '';
+    board.innerHTML = confetti + statusHtml + '<div class="table-layout">'
       + '<div class="player-slot top">' + slotContent.top + '</div>'
       + '<div class="player-slot left">' + slotContent.left + '</div>'
       + tableHtml

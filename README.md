@@ -29,7 +29,16 @@ An online multiplayer version of Kadi — play with friends from anywhere.
 The game is built for phones — every opponent stays on screen and your hand sits above its action buttons:
 
 <p align="center">
-  <img src="docs/screenshots/05-mobile-game.png" alt="Niko Kadi on a phone" width="320" />
+  <img src="docs/screenshots/05-mobile-game.png" alt="Niko Kadi on a phone, light mode" width="300" />
+  <img src="docs/screenshots/07-mobile-game-dark.png" alt="Niko Kadi on a phone, dark mode" width="300" />
+</p>
+
+### Look and feel
+
+A street-game vibe: bottle-cap bunting, a kitenge-print card back, a mkeka-style table rim and a different colour for every seat, with no national-flag colours. The theme follows your device, so it switches between light and dark automatically.
+
+<p align="center">
+  <img src="docs/screenshots/06-game-board-dark.png" alt="Niko Kadi game board in dark mode" width="720" />
 </p>
 
 ### The game screen
