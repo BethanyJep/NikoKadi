@@ -36,5 +36,6 @@ test('round score sums remaining card points', () => {
       { hand: [{ rank: 'K' }, { rank: '2' }] }
     ]
   };
-  assert.equal(KadiGame.roundScore(state, 0), 37);
+  // Joker 500 + 5 + K 10 + 2 (75) = 590; the winner's hand is not counted
+  assert.equal(KadiGame.roundScore(state, 0), 590);
 });
