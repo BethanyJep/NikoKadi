@@ -622,24 +622,58 @@ button.card:hover {
 
 /* ── Responsive ── */
 @media (max-width: 768px) {
+  .app { padding: 0.75rem; }
+
+  /* Every opponent stays on screen: top, then left + right side by side */
   .table-layout {
     grid-template-areas:
-      "top"
-      "table"
-      "bottom";
-    grid-template-columns: 1fr;
-    grid-template-rows: auto auto auto;
+      "top top"
+      "left right"
+      "table table"
+      "bottom bottom";
+    grid-template-columns: 1fr 1fr;
+    grid-template-rows: auto;
+    min-height: 0;
+    gap: 0.5rem;
   }
-  .player-slot.left,
-  .player-slot.right { display: none; }
+  .player-slot:empty { display: none; }
+  .table-layout:has(.player-slot.right:empty) .player-slot.left { grid-column: 1 / -1; }
+
+  .player { padding: 0.5rem 0.6rem; }
+  .player h3 { margin-bottom: 0.3rem; font-size: 0.85rem; }
+
+  /* Opponent hands become a compact fan */
+  .player-slot.left .hand,
+  .player-slot.right .hand { flex-direction: row; }
+  .hand { gap: 0.3rem; }
+  .player-slot:not(.bottom) .hand { flex-wrap: nowrap; }
+  .player-slot:not(.bottom) .card.hidden { width: 30px; height: 44px; margin-right: -14px; flex: none; }
+  .player-slot:not(.bottom) .meta { margin-top: 0.4rem; }
+
   .table-center {
-    border-radius: 24px;
+    border-radius: 22px;
+    border-width: 10px;
     aspect-ratio: auto;
     max-width: 100%;
-    min-height: 200px;
+    min-height: 0;
+    padding: 0.9rem;
   }
-  .screen-card { margin: 1rem 0.5rem; }
-  .room-code { font-size: 1.8rem; }
+  .table-center .discard-area { gap: 0.75rem; }
+
+  /* My hand on top of its actions, thumb-reachable */
+  .player.active .player-body { flex-direction: column; gap: 0.75rem; }
+  .player-actions { flex-direction: row; flex-wrap: wrap; align-items: flex-end; min-width: 0; width: 100%; }
+  .player-actions button { flex: 1 1 120px; width: auto; }
+  .player-actions select { width: auto; flex: 1 1 100px; margin-right: 0; }
+  .player-actions .field-label { flex: 0 0 100%; margin-bottom: 0; }
+  .player-actions > p { flex: 0 0 100%; }
+  .player.active .card { width: 52px; height: 78px; }
+
+  .screen-card { margin: 1rem 0; padding: 1.25rem; }
+  .room-code { font-size: 1.7rem; }
+
+  #toastContainer { top: auto; bottom: 1rem; left: 1rem; right: 1rem; align-items: stretch; }
+  .toast { max-width: none; }
 }
 
 /* ── Accessibility ── */
