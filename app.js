@@ -120,6 +120,8 @@
   async function enterRoom() {
     showScreen('room');
     document.getElementById('roomCodeDisplay').textContent = currentRoom.code;
+    document.getElementById('shareWhatsAppLink').href = 'https://wa.me/?text=' + encodeURIComponent(
+      'Join my Niko Kadi game! Room code: ' + currentRoom.code + ' — ' + inviteUrl(currentRoom.code));
 
     roomPlayers = await Lobby.getRoomPlayers(currentRoom.id);
     renderRoomPlayers();
@@ -158,6 +160,27 @@
     } else {
       roomErr.style.display = 'none';
     }
+  }
+
+  function inviteUrl(code) {
+    return location.origin + location.pathname + '?room=' + encodeURIComponent(code);
+  }
+
+  async function handleCopyCode() {
+    if (!currentRoom) return;
+    var code = currentRoom.code;
+    try {
+      await navigator.clipboard.writeText(code);
+    } catch (_) {
+      var range = document.createRange();
+      range.selectNodeContents(document.getElementById('roomCodeDisplay'));
+      var sel = window.getSelection();
+      sel.removeAllRanges();
+      sel.addRange(range);
+      document.execCommand('copy');
+      sel.removeAllRanges();
+    }
+    showToast('Room code ' + code + ' copied');
   }
 
   async function handleStartGame() {
@@ -542,6 +565,7 @@
     if (e.key === 'Enter') handleJoinRoom();
   });
   document.getElementById('startGameBtn').addEventListener('click', handleStartGame);
+  document.getElementById('copyCodeBtn').addEventListener('click', handleCopyCode);
   document.getElementById('leaveRoomBtn').addEventListener('click', handleLeaveRoom);
   document.getElementById('backToLobbyBtn').addEventListener('click', handleLeaveRoom);
 
@@ -549,5 +573,11 @@
   (function init() {
     var saved = Auth.getDisplayName();
     if (saved) document.getElementById('displayName').value = saved;
+
+    // Invite links look like ?room=ABC123 — pre-fill the join box
+    var invited = new URLSearchParams(location.search).get('room');
+    if (invited) {
+      document.getElementById('roomCodeInput').value = invited.toUpperCase().slice(0, 6);
+    }
   })();
 }());
