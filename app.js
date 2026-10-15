@@ -272,12 +272,52 @@
     return 'suit-joker';
   }
 
+  // Pip positions (percent of the card) for number cards, laid out like a real deck
+  var L = 33, C = 50, R = 67;
+  var PIPS = {
+    '2': [[C, 20], [C, 80]],
+    '3': [[C, 20], [C, 50], [C, 80]],
+    '4': [[L, 20], [R, 20], [L, 80], [R, 80]],
+    '5': [[L, 20], [R, 20], [C, 50], [L, 80], [R, 80]],
+    '6': [[L, 20], [R, 20], [L, 50], [R, 50], [L, 80], [R, 80]],
+    '7': [[L, 20], [R, 20], [C, 35], [L, 50], [R, 50], [L, 80], [R, 80]],
+    '8': [[L, 20], [R, 20], [C, 35], [L, 50], [R, 50], [C, 65], [L, 80], [R, 80]],
+    '9': [[L, 20], [R, 20], [L, 40], [R, 40], [C, 50], [L, 60], [R, 60], [L, 80], [R, 80]],
+    '10': [[L, 20], [R, 20], [C, 30], [L, 40], [R, 40], [L, 60], [R, 60], [C, 70], [L, 80], [R, 80]]
+  };
+
+  // Inner markup of a card face: corner indices plus pips, a court panel or an ace
   function cardHtml(card) {
     if (card.rank === 'JOKER') {
-      return '<span class="card-rank">★</span><span class="card-suit">JKR</span>';
+      return '<span class="joker"><b>★</b><span>JOKER</span></span>';
     }
-    return '<span class="card-rank">' + escapeHtml(card.rank) + '</span>'
-      + '<span class="card-suit">' + escapeHtml(card.suit) + '</span>';
+    var rank = escapeHtml(card.rank);
+    var suit = escapeHtml(card.suit);
+    var corner = '<span class="corner"><b>' + rank + '</b><i>' + suit + '</i></span>'
+      + '<span class="corner flip"><b>' + rank + '</b><i>' + suit + '</i></span>';
+    var body = '';
+    if (card.rank === 'A') {
+      body = '<span class="pip ace" style="--x:50%;--y:50%">' + suit + '</span>';
+    } else if (PIPS[card.rank]) {
+      body = PIPS[card.rank].map(function (p) {
+        return '<span class="pip' + (p[1] > 50 ? ' flip' : '') + '" style="--x:' + p[0] + '%;--y:' + p[1] + '%">'
+          + suit + '</span>';
+      }).join('');
+    } else {
+      body = '<span class="court"><i>' + suit + '</i><b>' + rank + '</b><i>' + suit + '</i></span>';
+    }
+    return corner + body;
+  }
+
+  // Fan geometry for a hand of n cards: tilt per card and how much the cards overlap
+  function fanVars(n) {
+    var ang = n <= 1 ? 0 : Math.min(6, 34 / (n - 1));
+    var lap = n <= 6 ? 0.3 : n <= 10 ? 0.54 : n <= 14 ? 0.68 : 0.78;
+    return '--n:' + n + ';--ang:' + ang.toFixed(2) + 'deg;--lap:' + lap;
+  }
+
+  function fanOffset(i, n) {
+    return '--o:' + (i - (n - 1) / 2);
   }
 
   // ── Game actions ──
@@ -365,13 +405,17 @@
     var isMe = playerIndex === myPlayerIndex;
     var isCurrent = playerIndex === gameState.currentPlayer;
 
-    var cards = player.hand.map(function (card) {
-      if (!isMe) return '<span class="card hidden" aria-hidden="true"></span>';
+    var handSize = player.hand.length;
+    var cards = player.hand.map(function (card, i) {
+      var offset = fanOffset(i, handSize);
+      if (!isMe) return '<span class="card hidden" style="' + offset + '" aria-hidden="true"></span>';
       var isSelected = selectedCardIds.indexOf(card.id) >= 0;
       var cls = 'card ' + suitClass(card.suit) + (isSelected ? ' selected' : '');
-      return '<button class="' + cls + '" data-card-id="' + card.id + '" aria-pressed="' + isSelected + '">'
+      return '<button class="' + cls + '" style="' + offset + '" data-card-id="' + card.id
+        + '" aria-pressed="' + isSelected + '" aria-label="' + escapeHtml(card.label || card.rank + card.suit) + '">'
         + cardHtml(card) + '</button>';
     }).join('');
+    var handHtml = '<div class="hand" style="' + fanVars(handSize) + '">' + cards + '</div>';
 
     var actionsHtml = '';
     if (isMe && !gameState.winner) {
@@ -423,8 +467,8 @@
     }
 
     var bodyHtml = isMe
-      ? '<div class="player-body"><div class="hand">' + cards + '</div>' + actionsHtml + '</div>'
-      : '<div class="hand">' + cards + '</div>';
+      ? '<div class="player-body">' + handHtml + actionsHtml + '</div>'
+      : '<div class="fan-box" style="' + fanVars(handSize) + '">' + handHtml + '</div>';
 
     var turnBadge = isCurrent && !gameState.winner
       ? '<span class="turn-badge">TURN</span>' : '';
@@ -453,7 +497,7 @@
 
   // Deterministic pieces so re-renders don't reshuffle the burst
   function confettiHtml() {
-    var colors = ['--pink', '--orange', '--yellow', '--teal', '--violet'];
+    var colors = ['--clay', '--saffron', '--teal', '--indigo'];
     var bits = '';
     for (var i = 0; i < 36; i++) {
       bits += '<i style="--x:' + ((i * 29) % 100) + 'vw;--c:var(' + colors[i % colors.length]
@@ -501,7 +545,14 @@
 
     var board = document.getElementById('board');
     var top = KadiGame.topDiscard(gameState);
-    var topCls = 'card ' + suitClass(top.suit);
+    var pileCards = gameState.discardPile.slice(-4);
+    var pileShapes = [['-3deg', '0px', '0px'], ['9deg', '10px', '-3px'], ['-13deg', '-9px', '4px'], ['18deg', '6px', '-5px']];
+    var pileHtml = pileCards.map(function (c, idx) {
+      var depth = pileCards.length - 1 - idx;
+      var s = pileShapes[depth];
+      return '<span class="card ' + suitClass(c.suit) + '" style="--rot:' + s[0] + ';--tx:' + s[1] + ';--ty:' + s[2] + '">'
+        + cardHtml(c) + '</span>';
+    }).join('');
 
     var positions = assignPositions(gameState.players.length, myPlayerIndex);
     var slotContent = { top: '', left: '', right: '', bottom: '' };
@@ -533,8 +584,9 @@
 
     var tableHtml = '<div class="table-center">'
       + '<div class="discard-area">'
-      + '<span class="top-card-display"><span class="' + topCls + '">' + cardHtml(top) + '</span></span>'
-      + '<div class="draw-pile">' + gameState.drawPile.length + '<br>cards</div>'
+      + '<div class="pile top-card-display" aria-label="Discard pile">' + pileHtml + '</div>'
+      + '<div class="deck" aria-label="Draw pile"><span class="card hidden"></span>'
+      + '<span class="deck-count">' + gameState.drawPile.length + ' cards</span></div>'
       + '</div>'
       + '<div class="table-info">'
       + topInfo

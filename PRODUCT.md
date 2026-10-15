@@ -25,7 +25,7 @@ A browser-based Kadi that follows the rules as played with friends in Kenya, inc
 - No build step; static files only.
 
 ## Brand Commitments
-Name: Niko Kadi. Visual direction (confirmed by the user): a street-wise Kenyan game vibe that is colourful, intriguing and motivating to play. Avoid the Kenyan flag colours (red, black, green, white as a set). Draw on bottle-cap bunting, kitenge prints, mkeka mats and street signage. Ship both a light and a dark theme that follow the device setting (`prefers-color-scheme`).
+Name: Niko Kadi. Visual direction (confirmed by the user): a card table. Real playing-card faces (corner indices and pips) on a dark cloth, hands fanned as if held, an African-inspired palette limited to four bright colours chosen from the colour wheel (clay 14°, saffron 43°, teal 190°, indigo 228°) with neutrals for everything else. No national-flag colours. Ship both a light and a dark theme that follow the device setting (`prefers-color-scheme`).
 
 ## Evidence on Hand
 No testimonials, usage data or external brand assets exist. README screenshots are in `docs/screenshots/`.

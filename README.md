@@ -35,7 +35,7 @@ The game is built for phones — every opponent stays on screen and your hand si
 
 ### Look and feel
 
-A street-game vibe: bottle-cap bunting, a kitenge-print card back, a mkeka-style table rim and a different colour for every seat, with no national-flag colours. The theme follows your device, so it switches between light and dark automatically.
+Real playing-card faces on a dark cloth, with your hand fanned in front of you like you're holding it. Opponents fan their cards face-down around the table, and the discard pile and draw deck sit in the middle. The palette is just four bright colours (clay, saffron, teal, indigo), picked as a pair of neighbours and their opposites on the colour wheel, so everything stays in harmony. The theme follows your device, so it switches between light and dark automatically.
 
 <p align="center">
   <img src="docs/screenshots/06-game-board-dark.png" alt="Niko Kadi game board in dark mode" width="720" />
