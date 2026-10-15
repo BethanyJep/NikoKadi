@@ -486,64 +486,66 @@ button.card { min-height: 0; cursor: pointer; }
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 0.1em;
-  top: 0.4em;
-  left: 0.45em;
+  gap: 0.12em;
+  top: 0.55em;
+  left: 0.3em;
+  width: 1.3em;
+  font-size: 0.74em;
   line-height: 1;
 }
 
-.card .corner.flip { top: auto; left: auto; bottom: 0.4em; right: 0.45em; transform: rotate(180deg); }
-.card .corner b { font-size: 1.15em; letter-spacing: -0.06em; }
-.card .corner i { font-style: normal; font-size: 1em; }
+.card .corner.flip { top: auto; left: auto; bottom: 0.55em; right: 0.3em; transform: rotate(180deg); }
+.card .corner b { font-size: 1.2em; letter-spacing: -0.06em; }
+.card .suit { display: block; width: 1em; height: 1em; fill: currentColor; }
 
 .card .pip {
   position: absolute;
   left: var(--x);
   top: var(--y);
   transform: translate(-50%, -50%);
-  font-size: 1.55em;
-  line-height: 1;
+  width: 1.05em;
+  height: 1.05em;
 }
 
 .card .pip.flip { transform: translate(-50%, -50%) rotate(180deg); }
-.card .pip.ace { font-size: 3.6em; }
+.card .pip .suit { width: 100%; height: 100%; }
+.card .pip.ace { width: 3.4em; height: 3.4em; }
 
-/* J, Q, K: a framed portrait panel with the letter inside */
+/* J, Q, K: a framed, double-ended figure with the suit repeated beside it */
 .card .court {
   position: absolute;
-  inset: 17% 20%;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: space-between;
-  padding: 0.35em 0;
-  border: 2px solid currentColor;
-  border-radius: 0.3em;
-  background:
-    repeating-linear-gradient(45deg, transparent 0 0.35em, rgba(250, 186, 25, 0.22) 0.35em 0.5em),
-    #fff6dc;
+  inset: 12% 19%;
+  border: 1px solid currentColor;
+  background: #fffaf0;
+  --robe: var(--indigo);
 }
 
-.card .court b { font-family: var(--display); font-size: 2.3em; font-weight: 400; }
-.card .court i { font-style: normal; font-size: 1.3em; }
-.card .court i:last-child { transform: rotate(180deg); }
+.card.suit-hearts .court,
+.card.suit-diamonds .court { --robe: var(--clay); }
+
+.card .court-art { display: block; width: 100%; height: 100%; }
+
+.card .court-pip {
+  position: absolute;
+  top: 0.25em;
+  left: 0.2em;
+  width: 0.75em;
+  height: 0.75em;
+}
+.card .court-pip.flip { top: auto; left: auto; bottom: 0.25em; right: 0.2em; transform: rotate(180deg); }
+.card .court-pip .suit { width: 100%; height: 100%; }
 
 .card.suit-joker { color: var(--indigo); }
-.card .joker {
-  position: absolute;
-  inset: 12% 22%;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  gap: 0.2em;
-  border: 2px solid var(--indigo);
-  border-radius: 0.3em;
-  background: var(--saffron);
-  color: var(--indigo);
-}
-.card .joker b { font-size: 3em; line-height: 1; }
-.card .joker span { font-size: 0.7em; font-weight: 800; letter-spacing: 0.08em; }
+.card .court.joker { inset: 12% 21%; border-color: var(--indigo); --robe: var(--indigo); }
+
+/* colours shared by the court artwork */
+.c-robe { fill: var(--robe); }
+.c-gold { fill: var(--saffron); }
+.c-teal { fill: var(--teal); }
+.c-clay { fill: var(--clay); }
+.c-skin { fill: #b9774a; }
+.c-hair { fill: #2a1a12; }
+.c-steel { fill: #d7dbe8; }
 
 /* Card backs: an indigo diamond lattice in saffron, framed in white like a real deck */
 .card.hidden {

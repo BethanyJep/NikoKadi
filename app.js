@@ -273,7 +273,7 @@
   }
 
   // Pip positions (percent of the card) for number cards, laid out like a real deck
-  var L = 33, C = 50, R = 67;
+  var L = 31, C = 50, R = 69;
   var PIPS = {
     '2': [[C, 20], [C, 80]],
     '3': [[C, 20], [C, 50], [C, 80]],
@@ -286,15 +286,25 @@
     '10': [[L, 20], [R, 20], [C, 30], [L, 40], [R, 40], [L, 60], [R, 60], [C, 70], [L, 80], [R, 80]]
   };
 
-  // Inner markup of a card face: corner indices plus pips, a court panel or an ace
+  var SUIT_IDS = { '♠': 's', '♥': 'h', '♦': 'd', '♣': 'c' };
+
+  // Suits are drawn as SVG so they look the same on every device (no emoji substitution)
+  function suitSvg(suit) {
+    return '<svg class="suit" viewBox="0 0 100 100" aria-hidden="true"><use href="#suit-'
+      + (SUIT_IDS[suit] || 's') + '"/></svg>';
+  }
+
+  // Inner markup of a card face: corner indices plus pips, a court figure or an ace
   function cardHtml(card) {
     if (card.rank === 'JOKER') {
-      return '<span class="joker"><b>★</b><span>JOKER</span></span>';
+      return '<span class="corner"><b>★</b></span><span class="corner flip"><b>★</b></span>'
+        + '<span class="court joker"><svg class="court-art" viewBox="0 0 60 96" aria-hidden="true">'
+        + '<use href="#jester"/></svg></span>';
     }
     var rank = escapeHtml(card.rank);
-    var suit = escapeHtml(card.suit);
-    var corner = '<span class="corner"><b>' + rank + '</b><i>' + suit + '</i></span>'
-      + '<span class="corner flip"><b>' + rank + '</b><i>' + suit + '</i></span>';
+    var suit = suitSvg(card.suit);
+    var corner = '<span class="corner"><b>' + rank + '</b>' + suit + '</span>'
+      + '<span class="corner flip"><b>' + rank + '</b>' + suit + '</span>';
     var body = '';
     if (card.rank === 'A') {
       body = '<span class="pip ace" style="--x:50%;--y:50%">' + suit + '</span>';
@@ -304,7 +314,9 @@
           + suit + '</span>';
       }).join('');
     } else {
-      body = '<span class="court"><i>' + suit + '</i><b>' + rank + '</b><i>' + suit + '</i></span>';
+      body = '<span class="court"><svg class="court-art" viewBox="0 0 60 96" aria-hidden="true"><use href="#court-'
+        + rank + '"/></svg>'
+        + '<span class="court-pip">' + suit + '</span><span class="court-pip flip">' + suit + '</span></span>';
     }
     return corner + body;
   }
@@ -550,7 +562,7 @@
     var pileHtml = pileCards.map(function (c, idx) {
       var depth = pileCards.length - 1 - idx;
       var s = pileShapes[depth];
-      return '<span class="card ' + suitClass(c.suit) + '" style="--rot:' + s[0] + ';--tx:' + s[1] + ';--ty:' + s[2] + '">'
+      return '<span class="card ' + suitClass(c.suit) + '" role="img" aria-label="' + escapeHtml(c.label) + '" style="--rot:' + s[0] + ';--tx:' + s[1] + ';--ty:' + s[2] + '">'
         + cardHtml(c) + '</span>';
     }).join('');
 
