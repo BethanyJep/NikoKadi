@@ -53,6 +53,14 @@
     }, 3000);
   }
 
+  var lastAnnouncement = '';
+  function announce(text) {
+    var el = document.getElementById('srStatus');
+    if (!el || text === lastAnnouncement) return;
+    lastAnnouncement = text;
+    el.textContent = text;
+  }
+
   // ── Auth Screen ──
   async function handleAuth() {
     var name = document.getElementById('displayName').value.trim();
@@ -112,6 +120,8 @@
   async function enterRoom() {
     showScreen('room');
     document.getElementById('roomCodeDisplay').textContent = currentRoom.code;
+    document.getElementById('shareWhatsAppLink').href = 'https://wa.me/?text=' + encodeURIComponent(
+      'Join my Niko Kadi game! Room code: ' + currentRoom.code + ' — ' + inviteUrl(currentRoom.code));
 
     roomPlayers = await Lobby.getRoomPlayers(currentRoom.id);
     renderRoomPlayers();
@@ -150,6 +160,27 @@
     } else {
       roomErr.style.display = 'none';
     }
+  }
+
+  function inviteUrl(code) {
+    return location.origin + location.pathname + '?room=' + encodeURIComponent(code);
+  }
+
+  async function handleCopyCode() {
+    if (!currentRoom) return;
+    var code = currentRoom.code;
+    try {
+      await navigator.clipboard.writeText(code);
+    } catch (_) {
+      var range = document.createRange();
+      range.selectNodeContents(document.getElementById('roomCodeDisplay'));
+      var sel = window.getSelection();
+      sel.removeAllRanges();
+      sel.addRange(range);
+      document.execCommand('copy');
+      sel.removeAllRanges();
+    }
+    showToast('Room code ' + code + ' copied');
   }
 
   async function handleStartGame() {
@@ -241,12 +272,64 @@
     return 'suit-joker';
   }
 
+  // Pip positions (percent of the card) for number cards, laid out like a real deck
+  var L = 31, C = 50, R = 69;
+  var PIPS = {
+    '2': [[C, 20], [C, 80]],
+    '3': [[C, 20], [C, 50], [C, 80]],
+    '4': [[L, 20], [R, 20], [L, 80], [R, 80]],
+    '5': [[L, 20], [R, 20], [C, 50], [L, 80], [R, 80]],
+    '6': [[L, 20], [R, 20], [L, 50], [R, 50], [L, 80], [R, 80]],
+    '7': [[L, 20], [R, 20], [C, 35], [L, 50], [R, 50], [L, 80], [R, 80]],
+    '8': [[L, 20], [R, 20], [C, 35], [L, 50], [R, 50], [C, 65], [L, 80], [R, 80]],
+    '9': [[L, 20], [R, 20], [L, 40], [R, 40], [C, 50], [L, 60], [R, 60], [L, 80], [R, 80]],
+    '10': [[L, 20], [R, 20], [C, 30], [L, 40], [R, 40], [L, 60], [R, 60], [C, 70], [L, 80], [R, 80]]
+  };
+
+  var SUIT_IDS = { '♠': 's', '♥': 'h', '♦': 'd', '♣': 'c' };
+
+  // Suits are drawn as SVG so they look the same on every device (no emoji substitution)
+  function suitSvg(suit) {
+    return '<svg class="suit" viewBox="0 0 100 100" aria-hidden="true"><use href="#suit-'
+      + (SUIT_IDS[suit] || 's') + '"/></svg>';
+  }
+
+  // Inner markup of a card face: corner indices plus pips, a court figure or an ace
   function cardHtml(card) {
     if (card.rank === 'JOKER') {
-      return '<span class="card-rank">★</span><span class="card-suit">JKR</span>';
+      return '<span class="corner"><b>★</b></span><span class="corner flip"><b>★</b></span>'
+        + '<span class="court joker"><svg class="court-art" viewBox="0 0 60 96" aria-hidden="true">'
+        + '<use href="#jester"/></svg></span>';
     }
-    return '<span class="card-rank">' + escapeHtml(card.rank) + '</span>'
-      + '<span class="card-suit">' + escapeHtml(card.suit) + '</span>';
+    var rank = escapeHtml(card.rank);
+    var suit = suitSvg(card.suit);
+    var corner = '<span class="corner"><b>' + rank + '</b>' + suit + '</span>'
+      + '<span class="corner flip"><b>' + rank + '</b>' + suit + '</span>';
+    var body = '';
+    if (card.rank === 'A') {
+      body = '<span class="pip ace" style="--x:50%;--y:50%">' + suit + '</span>';
+    } else if (PIPS[card.rank]) {
+      body = PIPS[card.rank].map(function (p) {
+        return '<span class="pip' + (p[1] > 50 ? ' flip' : '') + '" style="--x:' + p[0] + '%;--y:' + p[1] + '%">'
+          + suit + '</span>';
+      }).join('');
+    } else {
+      body = '<span class="court"><svg class="court-art" viewBox="0 0 60 96" aria-hidden="true"><use href="#court-'
+        + rank + '"/></svg>'
+        + '<span class="court-pip">' + suit + '</span><span class="court-pip flip">' + suit + '</span></span>';
+    }
+    return corner + body;
+  }
+
+  // Fan geometry for a hand of n cards: tilt per card and how much the cards overlap
+  function fanVars(n) {
+    var ang = n <= 1 ? 0 : Math.min(6, 34 / (n - 1));
+    var lap = n <= 6 ? 0.3 : n <= 10 ? 0.54 : n <= 14 ? 0.68 : 0.78;
+    return '--n:' + n + ';--ang:' + ang.toFixed(2) + 'deg;--lap:' + lap;
+  }
+
+  function fanOffset(i, n) {
+    return '--o:' + (i - (n - 1) / 2);
   }
 
   // ── Game actions ──
@@ -334,13 +417,17 @@
     var isMe = playerIndex === myPlayerIndex;
     var isCurrent = playerIndex === gameState.currentPlayer;
 
-    var cards = player.hand.map(function (card) {
-      if (!isMe) return '<span class="card hidden">🂠</span>';
+    var handSize = player.hand.length;
+    var cards = player.hand.map(function (card, i) {
+      var offset = fanOffset(i, handSize);
+      if (!isMe) return '<span class="card hidden" style="' + offset + '" aria-hidden="true"></span>';
       var isSelected = selectedCardIds.indexOf(card.id) >= 0;
       var cls = 'card ' + suitClass(card.suit) + (isSelected ? ' selected' : '');
-      return '<button class="' + cls + '" data-card-id="' + card.id + '">'
+      return '<button class="' + cls + '" style="' + offset + '" data-card-id="' + card.id
+        + '" aria-pressed="' + isSelected + '" aria-label="' + escapeHtml(card.label || card.rank + card.suit) + '">'
         + cardHtml(card) + '</button>';
     }).join('');
+    var handHtml = '<div class="hand" style="' + fanVars(handSize) + '">' + cards + '</div>';
 
     var actionsHtml = '';
     if (isMe && !gameState.winner) {
@@ -360,13 +447,18 @@
       } else {
         var turnActions = '';
         if (isMyTurn() && !gameState.pendingQuestion) {
-          turnActions = '<label style="font-size:0.8rem;opacity:0.8;">Ace suit</label>'
-            + '<select id="suitChoice">'
-            + '<option value="♠">♠ Spades</option>'
-            + '<option value="♥">♥ Hearts</option>'
-            + '<option value="♦">♦ Diamonds</option>'
-            + '<option value="♣">♣ Clubs</option>'
-            + '</select>'
+          var aceSelected = player.hand.some(function (c) {
+            return c.rank === 'A' && selectedCardIds.indexOf(c.id) >= 0;
+          });
+          turnActions = (aceSelected
+              ? '<label for="suitChoice" class="field-label">Request a suit with your Ace</label>'
+                + '<select id="suitChoice">'
+                + '<option value="♠">♠ Spades</option>'
+                + '<option value="♥">♥ Hearts</option>'
+                + '<option value="♦">♦ Diamonds</option>'
+                + '<option value="♣">♣ Clubs</option>'
+                + '</select>'
+              : '')
             + (selectedCardIds.length > 0 ? '<button id="playSelectedBtn">▶ Play Cards</button>' : '')
             + '<button id="drawBtn">🃏 Draw / Penalty</button>';
         }
@@ -387,13 +479,15 @@
     }
 
     var bodyHtml = isMe
-      ? '<div class="player-body"><div class="hand">' + cards + '</div>' + actionsHtml + '</div>'
-      : '<div class="hand">' + cards + '</div>';
+      ? '<div class="player-body">' + handHtml + actionsHtml + '</div>'
+      : '<div class="fan-box" style="' + fanVars(handSize) + '">' + handHtml + '</div>';
 
     var turnBadge = isCurrent && !gameState.winner
       ? '<span class="turn-badge">TURN</span>' : '';
 
-    return '<section class="player ' + (isMe ? 'active' : '') + '">'
+    var seatCls = 'seat-' + (playerIndex % 4);
+    var currentCls = isCurrent && !gameState.winner ? ' current' : '';
+    return '<section class="player ' + seatCls + currentCls + (isMe ? ' active' : '') + '">'
       + '<h3>' + escapeHtml(player.name) + (isMe ? ' (you)' : '')
       + ' <small>(' + player.hand.length + ' cards)</small> ' + turnBadge + '</h3>'
       + bodyHtml
@@ -413,13 +507,64 @@
     return positions;
   }
 
+  // Deterministic pieces so re-renders don't reshuffle the burst
+  function confettiHtml() {
+    var colors = ['--clay', '--saffron', '--teal', '--indigo'];
+    var bits = '';
+    for (var i = 0; i < 36; i++) {
+      bits += '<i style="--x:' + ((i * 29) % 100) + 'vw;--c:var(' + colors[i % colors.length]
+        + ');--t:' + (2.6 + (i % 5) * 0.5) + 's;--d:' + ((i % 9) * 0.12) + 's;--r:'
+        + (360 + (i % 7) * 90) + 'deg"></i>';
+    }
+    return '<div class="confetti" aria-hidden="true">' + bits + '</div>';
+  }
+
+  // ── Status strip: the one place the current obligation is stated ──
+  function buildStatusStrip(turnText) {
+    var chips = [];
+    var turnCls = 'chip chip-turn';
+    var turnLabel = turnText;
+    if (gameState.winner) {
+      turnCls += ' chip-win';
+      turnLabel = 'Round over';
+    } else if (isMyPendingQuestion()) {
+      turnLabel = 'Answer the ' + escapeHtml(gameState.pendingQuestion.questionCard.label);
+      turnCls += ' chip-mine';
+    } else if (isMyTurn()) {
+      turnCls += ' chip-mine';
+    }
+    chips.push('<span class="' + turnCls + '">' + turnLabel + '</span>');
+
+    if (gameState.pendingPenalty) {
+      var amount = gameState.pendingPenalty.amount;
+      chips.push('<span class="chip chip-penalty">Penalty: draw ' + amount + '</span>');
+      if (isMyTurn()) {
+        chips.push('<span class="chip chip-hint">Block with a matching 2/3, Joker or Ace — or take it</span>');
+      }
+    }
+    if (gameState.requiredSuit) {
+      chips.push('<span class="chip chip-suit ' + suitClass(gameState.requiredSuit) + '">Suit: '
+        + escapeHtml(gameState.requiredSuit) + '</span>');
+    }
+    chips.push('<span class="chip chip-dir" title="Direction of play">'
+      + (gameState.direction === 1 ? '↻' : '↺') + '</span>');
+    return '<div class="status-strip">' + chips.join('') + '</div>';
+  }
+
   // ── Main game render ──
   function renderGame() {
     if (!gameState) return;
 
     var board = document.getElementById('board');
     var top = KadiGame.topDiscard(gameState);
-    var topCls = 'card ' + suitClass(top.suit);
+    var pileCards = gameState.discardPile.slice(-4);
+    var pileShapes = [['-3deg', '0px', '0px'], ['9deg', '10px', '-3px'], ['-13deg', '-9px', '4px'], ['18deg', '6px', '-5px']];
+    var pileHtml = pileCards.map(function (c, idx) {
+      var depth = pileCards.length - 1 - idx;
+      var s = pileShapes[depth];
+      return '<span class="card ' + suitClass(c.suit) + '" role="img" aria-label="' + escapeHtml(c.label) + '" style="--rot:' + s[0] + ';--tx:' + s[1] + ';--ty:' + s[2] + '">'
+        + cardHtml(c) + '</span>';
+    }).join('');
 
     var positions = assignPositions(gameState.players.length, myPlayerIndex);
     var slotContent = { top: '', left: '', right: '', bottom: '' };
@@ -447,27 +592,31 @@
       turnText = isMyTurn() ? 'Your turn!' : escapeHtml(cpName) + "'s turn";
     }
 
+    var statusHtml = buildStatusStrip(turnText);
+
     var tableHtml = '<div class="table-center">'
       + '<div class="discard-area">'
-      + '<span class="top-card-display"><span class="' + topCls + '">' + cardHtml(top) + '</span></span>'
-      + '<div class="draw-pile">' + gameState.drawPile.length + '<br>cards</div>'
+      + '<div class="pile top-card-display" aria-label="Discard pile">' + pileHtml + '</div>'
+      + '<div class="deck" aria-label="Draw pile"><span class="card hidden"></span>'
+      + '<span class="deck-count">' + gameState.drawPile.length + ' cards</span></div>'
       + '</div>'
       + '<div class="table-info">'
       + topInfo
-      + '<p>' + (gameState.direction === 1 ? '↻' : '↺') + ' ' + turnText + '</p>'
-      + (gameState.pendingPenalty ? '<p style="color:var(--warn);">⚠ Penalty: ' + gameState.pendingPenalty.amount + ' cards</p>' : '')
-      + (gameState.requiredSuit ? '<p>Suit: ' + escapeHtml(gameState.requiredSuit) + '</p>' : '')
       + (gameState.winner ? '<p class="winner">🏆 ' + escapeHtml(gameState.message) + '</p>' : '<p>' + escapeHtml(gameState.message) + '</p>')
       + '</div>'
       + '</div>';
 
-    board.innerHTML = '<div class="table-layout">'
+    var confetti = gameState.winner ? confettiHtml() : '';
+    board.innerHTML = confetti + statusHtml + '<div class="table-layout">'
       + '<div class="player-slot top">' + slotContent.top + '</div>'
       + '<div class="player-slot left">' + slotContent.left + '</div>'
       + tableHtml
       + '<div class="player-slot right">' + slotContent.right + '</div>'
       + '<div class="player-slot bottom">' + slotContent.bottom + '</div>'
       + '</div>';
+
+    announce(turnText + '. ' + gameState.message
+      + (gameState.pendingPenalty ? ' Penalty: ' + gameState.pendingPenalty.amount + ' cards.' : ''));
 
     var playBtn = document.getElementById('playSelectedBtn');
     var drawBtn = document.getElementById('drawBtn');
@@ -500,6 +649,10 @@
     if (e.key === 'Enter') handleJoinRoom();
   });
   document.getElementById('startGameBtn').addEventListener('click', handleStartGame);
+  document.getElementById('rulesBtn').addEventListener('click', function () {
+    document.getElementById('rulesDialog').showModal();
+  });
+  document.getElementById('copyCodeBtn').addEventListener('click', handleCopyCode);
   document.getElementById('leaveRoomBtn').addEventListener('click', handleLeaveRoom);
   document.getElementById('backToLobbyBtn').addEventListener('click', handleLeaveRoom);
 
@@ -507,5 +660,11 @@
   (function init() {
     var saved = Auth.getDisplayName();
     if (saved) document.getElementById('displayName').value = saved;
+
+    // Invite links look like ?room=ABC123 — pre-fill the join box
+    var invited = new URLSearchParams(location.search).get('room');
+    if (invited) {
+      document.getElementById('roomCodeInput').value = invited.toUpperCase().slice(0, 6);
+    }
   })();
 }());

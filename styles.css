@@ -1,16 +1,82 @@
+/*
+ * Niko Kadi — a card night around the table.
+ * Real playing-card faces on a dark cloth, cards fanned in the hand like you are holding them,
+ * and four bright colours taken from one spot on the colour wheel: a warm pair (clay 14°,
+ * saffron 43°) and its complementary cool pair (teal 190°, indigo 228°). Everything else is a
+ * neutral. Light and dark follow the device setting.
+ */
 :root {
-  color-scheme: dark;
-  --bg: #0a0e1a;
-  --felt: #1b5e20;
-  --felt-light: #2e7d32;
-  --card-bg: #1a2236;
-  --ink: #f8faff;
-  --accent: #a855f7;
-  --good: #4ade80;
-  --warn: #fb923c;
-  --hot-pink: #ec4899;
-  --cyan: #22d3ee;
-  --gold: #fbbf24;
+  color-scheme: light dark;
+
+  /* the four colours — same in both modes */
+  --clay: #c34018;
+  --saffron: #faba19;
+  --teal: #0f758a;
+  --indigo: #2b43a1;
+  --on-clay: #ffffff;
+  --on-saffron: #121830;
+  --on-teal: #ffffff;
+  --on-indigo: #ffffff;
+
+  /* playing cards */
+  --card-face: #fffdf7;
+  --suit-red: #bb301b;
+  --suit-black: #121830;
+
+  /* the table: a dark cloth in a deep wooden rim */
+  --cloth: #16353b;
+  --cloth-light: #1d4750;
+  --rim: #35261f;
+  --on-cloth: #fcf7ee;
+
+  --display: 'Bungee', Impact, 'Arial Black', sans-serif;
+
+  /* light mode */
+  --bg: #fcf7ee;
+  --surface: #ffffff;
+  --surface-2: #f6efe0;
+  --line: #e0d3b8;
+  --ink: #121830;
+  --ink-dim: #414a6c;
+  --heading: #223581;
+  --focus: #223581;
+  --outline: #121830;
+  --input-bg: #ffffff;
+  --input-border: #414a6c;
+  --strip-bg: #ffffff;
+  --toast-bg: #121830;
+  --toast-ink: #fcf7ee;
+  --error: #b3261e;
+  --logo-fill: #121830;
+  --logo-shadow: 3px 3px 0 var(--clay), 6px 6px 0 var(--saffron);
+  --backdrop: rgba(18, 24, 48, 0.6);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #0f1324;
+    --surface: #1d233a;
+    --surface-2: #272f4c;
+    --line: #3a4468;
+    --ink: #fcf7ee;
+    --ink-dim: #d9d0bf;
+    --heading: #faba19;
+    --focus: #faba19;
+    --outline: #05070f;
+    --input-bg: #0f1324;
+    --input-border: #9aa3c7;
+    --strip-bg: #1d233a;
+    --toast-bg: #fcf7ee;
+    --toast-ink: #121830;
+    --error: #ff9d82;
+    --logo-fill: #faba19;
+    --logo-shadow: 3px 3px 0 var(--clay), 6px 6px 0 var(--indigo);
+    --backdrop: rgba(5, 7, 15, 0.8);
+  }
+}
+
+:root {
+  --sticker-shadow: 3px 3px 0 var(--outline);
 }
 
 * { box-sizing: border-box; }
@@ -18,141 +84,249 @@
 body {
   margin: 0;
   min-height: 100vh;
-  font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Ubuntu, Cantarell;
+  font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Ubuntu, Cantarell, sans-serif;
   background: var(--bg);
   color: var(--ink);
   overflow-x: hidden;
 }
 
 .app {
+  position: relative;
   max-width: 1200px;
   margin: 0 auto;
   padding: 1rem;
 }
 
 h1 {
-  margin-bottom: 0.25rem;
-  background: linear-gradient(90deg, var(--gold), var(--hot-pink), var(--accent));
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
-  font-size: 2rem;
+  margin: 0 0 1.25rem;
+  font-family: var(--display);
+  font-weight: 400;
+  font-size: clamp(1.8rem, 6vw, 2.6rem);
+  line-height: 1;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+  color: var(--logo-fill);
+  text-shadow: var(--logo-shadow);
 }
 
-.subtitle { margin-top: 0; opacity: 0.7; font-size: 0.9rem; }
-
-.controls {
-  background: rgba(30, 40, 70, 0.7);
-  border: 1px solid rgba(168, 85, 247, 0.4);
-  border-radius: 12px;
-  padding: 0.9rem;
-  margin-bottom: 1rem;
-  backdrop-filter: blur(8px);
+/* A string of bottle caps under the title */
+h1::after {
+  content: '';
+  display: block;
+  height: 14px;
+  margin-top: 1.4rem;
+  background:
+    radial-gradient(circle at 10px 50%, var(--clay) 6px, transparent 6.5px),
+    radial-gradient(circle at 30px 50%, var(--saffron) 6px, transparent 6.5px),
+    radial-gradient(circle at 50px 50%, var(--teal) 6px, transparent 6.5px),
+    radial-gradient(circle at 70px 50%, var(--indigo) 6px, transparent 6.5px);
+  background-size: 80px 100%;
+  text-shadow: none;
 }
+
+.subtitle { margin-top: 0; color: var(--ink-dim); font-size: 0.95rem; }
 
 input {
+  min-height: 44px;
   width: min(100%, 420px);
-  padding: 0.5rem;
-  border-radius: 8px;
-  border: 1px solid rgba(168, 85, 247, 0.5);
-  background: rgba(20, 24, 40, 0.8);
+  padding: 0.6rem 0.7rem;
+  border-radius: 6px;
+  border: 2px solid var(--input-border);
+  background: var(--input-bg);
   color: var(--ink);
+  font-size: 1rem;
   margin-right: 0.5rem;
 }
 
+input::placeholder { color: var(--ink-dim); opacity: 0.8; }
+
 select {
+  min-height: 44px;
   padding: 0.5rem;
-  border-radius: 8px;
-  border: 1px solid rgba(168, 85, 247, 0.5);
-  background: rgba(20, 24, 40, 0.8);
+  border-radius: 6px;
+  border: 2px solid var(--input-border);
+  background: var(--input-bg);
   color: var(--ink);
   margin-right: 0.5rem;
 }
 
 button {
-  border: 0;
-  border-radius: 10px;
+  min-height: 44px;
+  border: 2px solid var(--outline);
+  border-radius: 6px;
   padding: 0.5rem 0.85rem;
-  background: linear-gradient(135deg, var(--accent), var(--hot-pink));
-  color: var(--ink);
-  font-weight: 600;
+  background: var(--teal);
+  color: var(--on-teal);
+  font-weight: 800;
+  letter-spacing: 0.02em;
   cursor: pointer;
-  transition: transform 0.1s, box-shadow 0.1s;
+  box-shadow: var(--sticker-shadow);
+  transition: transform 0.08s, box-shadow 0.08s;
 }
 
 button:hover {
-  transform: scale(1.03);
-  box-shadow: 0 4px 15px rgba(168, 85, 247, 0.4);
+  transform: translate(-1px, -1px);
+  box-shadow: 4px 4px 0 var(--outline);
 }
 
-button:disabled { opacity: 0.4; cursor: not-allowed; transform: none; box-shadow: none; }
+button:active {
+  transform: translate(2px, 2px);
+  box-shadow: 1px 1px 0 var(--outline);
+}
 
-/* ── Table Layout ── */
+button:disabled { opacity: 0.45; cursor: not-allowed; transform: none; box-shadow: none; }
+
+/* Go actions are clay; the teal default is for draw / take-the-penalty */
+#authBtn, #createRoomBtn, #joinRoomBtn, #startGameBtn,
+#playSelectedBtn, #submitAnswerBtn, #nextRoundBtn {
+  background: var(--clay);
+  color: var(--on-clay);
+}
+
+/* Declaring Niko Kadi is the loudest button on the board */
+#declareBtn {
+  background: var(--saffron);
+  color: var(--on-saffron);
+}
+
+/* ── Status strip ── */
+.status-strip {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 0.75rem;
+  padding: 0.6rem 0.75rem;
+  background: var(--strip-bg);
+  border: 3px solid var(--outline);
+  border-radius: 10px;
+  box-shadow: 4px 4px 0 var(--outline);
+}
+
+.chip {
+  display: inline-flex;
+  align-items: center;
+  min-height: 36px;
+  padding: 0.25rem 0.8rem;
+  border-radius: 6px;
+  border: 2px solid var(--outline);
+  background: var(--surface-2);
+  color: var(--ink);
+  font-weight: 800;
+  font-size: 0.95rem;
+}
+
+.chip-turn { font-family: var(--display); font-weight: 400; font-size: 1.05rem; text-transform: uppercase; }
+.chip-mine { background: var(--saffron); color: var(--on-saffron); box-shadow: var(--sticker-shadow); }
+.chip-win { background: var(--teal); color: var(--on-teal); }
+.chip-penalty { background: var(--clay); color: var(--on-clay); box-shadow: var(--sticker-shadow); }
+.chip-hint { background: transparent; border-color: transparent; color: var(--ink-dim); font-weight: 600; font-size: 0.85rem; }
+.chip-suit { background: var(--card-face); color: var(--suit-black); }
+.chip-suit.suit-hearts, .chip-suit.suit-diamonds { color: var(--suit-red); }
+.chip-dir { background: transparent; border-color: transparent; font-size: 1.4rem; color: var(--ink-dim); margin-left: auto; }
+
+/* ── The table ── */
 .table-layout {
+  position: relative;
   display: grid;
   grid-template-areas:
-    "top top top"
+    ". top ."
     "left table right"
     "bottom bottom bottom";
-  grid-template-columns: 1fr 2fr 1fr;
+  grid-template-columns: minmax(120px, 1fr) 2.4fr minmax(120px, 1fr);
   grid-template-rows: auto 1fr auto;
-  gap: 0.75rem;
-  min-height: 70vh;
+  gap: 0.5rem;
+  min-height: 66vh;
+  padding: 1.25rem 1.25rem 1.5rem;
+  color: var(--on-cloth);
+  border: 12px solid var(--rim);
+  border-radius: 32px;
+  background:
+    repeating-linear-gradient(45deg, rgba(255, 255, 255, 0.025) 0 2px, transparent 2px 7px),
+    radial-gradient(ellipse at 50% 42%, var(--cloth-light), var(--cloth) 72%);
+  box-shadow: inset 0 0 80px rgba(0, 0, 0, 0.55), 6px 6px 0 var(--outline);
 }
 
-/* ── Center Table (felt) ── */
+/* A saffron stitch running round the edge of the cloth */
+.table-layout::before {
+  content: '';
+  position: absolute;
+  inset: 8px;
+  border: 2px dashed var(--saffron);
+  border-radius: 22px;
+  opacity: 0.45;
+  pointer-events: none;
+}
+
 .table-center {
+  --cw: 76px;
   grid-area: table;
-  background: radial-gradient(ellipse at center, var(--felt-light), var(--felt), #0d3b12);
-  border: 4px solid #4a2c00;
-  border-radius: 50%;
-  padding: 2rem;
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 0.75rem;
-  box-shadow:
-    inset 0 0 40px rgba(0,0,0,0.4),
-    0 0 30px rgba(27, 94, 32, 0.3);
-  min-height: 300px;
-  aspect-ratio: 1;
-  margin: auto;
-  max-width: 340px;
-  width: 100%;
+  gap: 2rem;
+  padding: 0.5rem;
+}
+
+.table-center .discard-area {
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  gap: clamp(1.5rem, 6vw, 3.5rem);
 }
 
 .table-center .table-info {
   text-align: center;
-  font-size: 0.8rem;
-  color: rgba(255,255,255,0.85);
-  text-shadow: 0 1px 3px rgba(0,0,0,0.5);
+  font-size: 0.9rem;
+  color: var(--on-cloth);
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.6);
 }
 
 .table-center .table-info p { margin: 0.2rem 0; }
 
-.table-center .discard-area {
-  display: flex;
-  align-items: center;
-  gap: 1rem;
+/* The deck: a squared-off stack, its thickness drawn as stepped edges */
+.deck {
+  position: relative;
+  width: var(--cw);
+  height: calc(var(--cw) * 1.45);
+  margin-bottom: 8px;
 }
 
-.table-center .draw-pile {
-  width: 60px;
-  height: 90px;
-  border-radius: 8px;
-  background: linear-gradient(135deg, #1a237e, #283593);
-  border: 2px solid #5c6bc0;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 0.7rem;
-  color: #aaa;
-  box-shadow: 2px 3px 8px rgba(0,0,0,0.5);
-  text-align: center;
+.deck .card {
+  position: absolute;
+  inset: 0;
+  box-shadow:
+    1px 1px 0 #e9e1cf, 2px 2px 0 #cfc6b1, 3px 3px 0 #e9e1cf, 4px 4px 0 #cfc6b1,
+    5px 5px 0 #e9e1cf, 6px 6px 0 #cfc6b1, 7px 9px 14px rgba(0, 0, 0, 0.55);
 }
 
-/* ── Player positions ── */
+.deck-count {
+  position: absolute;
+  left: 50%;
+  bottom: -26px;
+  transform: translateX(-50%);
+  white-space: nowrap;
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: var(--on-cloth);
+}
+
+/* The discard pile: the last few cards, thrown down at slightly different angles */
+.pile {
+  position: relative;
+  width: var(--cw);
+  height: calc(var(--cw) * 1.45);
+  margin-bottom: 8px;
+}
+
+.pile .card {
+  position: absolute;
+  inset: 0;
+  transform: translate(var(--tx), var(--ty)) rotate(var(--rot));
+}
+
+/* ── Seats ── */
 .player-slot {
   display: flex;
   align-items: center;
@@ -164,203 +338,286 @@ button:disabled { opacity: 0.4; cursor: not-allowed; transform: none; box-shadow
 .player-slot.left { grid-area: left; }
 .player-slot.right { grid-area: right; }
 
+.player { --seat: var(--ink-dim); --on-seat: var(--on-clay); }
+.player.seat-0 { --seat: var(--clay); --on-seat: var(--on-clay); }
+.player.seat-1 { --seat: var(--saffron); --on-seat: var(--on-saffron); }
+.player.seat-2 { --seat: var(--teal); --on-seat: var(--on-teal); }
+.player.seat-3 { --seat: var(--indigo); --on-seat: var(--on-indigo); }
+
 .player {
-  background: rgba(20, 28, 50, 0.75);
-  border: 1px solid rgba(100, 116, 180, 0.3);
-  border-radius: 14px;
-  padding: 0.75rem;
-  backdrop-filter: blur(6px);
-  width: 100%;
-}
-
-.player h3 {
-  margin: 0 0 0.4rem 0;
-  font-size: 0.9rem;
-  color: var(--cyan);
-}
-
-.player.active {
-  border-color: var(--good);
-  box-shadow:
-    0 0 12px rgba(74, 222, 128, 0.3),
-    inset 0 0 12px rgba(74, 222, 128, 0.05);
-}
-
-.player.active h3 {
-  color: var(--good);
-}
-
-/* Active player layout: hand + buttons side by side */
-.player.active .player-body {
   display: flex;
-  align-items: flex-start;
-  gap: 1rem;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.45rem;
+  width: 100%;
+  background: none;
+}
+
+/* The name tag, in the player's colour */
+.player h3 {
+  margin: 0;
+  padding: 0.2rem 0.7rem;
+  font-size: 0.85rem;
+  color: var(--on-seat);
+  background: var(--seat);
+  border: 2px solid var(--outline);
+  border-radius: 999px;
+  box-shadow: 2px 2px 0 var(--outline);
+}
+
+.player h3 small { color: inherit; font-weight: 600; opacity: 0.85; }
+
+/* Whoever's turn it is gets a light on their hand */
+.player.current h3 { outline: 3px solid var(--on-cloth); outline-offset: 2px; }
+.player.current .hand { filter: drop-shadow(0 0 12px rgba(250, 186, 25, 0.6)); }
+
+.player-body {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.5rem;
+  width: 100%;
 }
 
 .player-actions {
   display: flex;
-  flex-direction: column;
-  gap: 0.45rem;
-  min-width: 130px;
-  padding-top: 0.25rem;
+  flex-wrap: wrap;
+  justify-content: center;
+  align-items: flex-end;
+  gap: 0.5rem;
+  max-width: 100%;
 }
 
+.player-actions > p {
+  flex: 0 0 100%;
+  text-align: center;
+  color: var(--on-cloth);
+}
+
+.player-actions .field-label { flex: 0 0 100%; text-align: center; color: var(--on-cloth); margin: 0; }
+
 .player-actions button {
-  width: 100%;
-  padding: 0.45rem 0.6rem;
-  font-size: 0.8rem;
+  padding: 0.45rem 0.9rem;
+  font-size: 0.85rem;
 }
 
 .player-actions select {
-  width: 100%;
-  font-size: 0.8rem;
+  font-size: 0.85rem;
   padding: 0.35rem;
+  margin-right: 0;
 }
 
+.player .meta { color: var(--on-cloth); opacity: 0.85; margin: 0; }
+
+/* ── Hands: cards fanned like they're held ── */
 .hand {
+  --cw: 46px;
   display: flex;
-  flex-wrap: wrap;
-  gap: 0.4rem;
-  flex: 1;
+  flex-wrap: nowrap;
+  justify-content: center;
+  padding: 30px 8px 10px;
+  max-width: 100%;
 }
 
-/* Opponent (side) hands render smaller */
-.player-slot.left .hand,
-.player-slot.right .hand {
-  flex-direction: column;
+.player.active .hand { --cw: 88px; }
+
+.hand .card {
+  flex: none;
+  transform-origin: 50% 130%;
+  transform: translateY(calc(var(--o) * var(--o) * 1.6px)) rotate(calc(var(--o) * var(--ang)));
 }
 
-/* ── Card styling ── */
+.hand .card + .card { margin-left: calc(var(--cw) * var(--lap) * -1); }
+
+/* Opponents on the sides and top hold their cards turned toward the table */
+.fan-box { position: relative; }
+.player-slot.top .fan-box { transform: rotate(180deg); }
+
+@media (min-width: 900px) {
+  .player.active .hand { --cw: 104px; }
+  .table-center { --cw: 92px; }
+}
+
+@media (min-width: 769px) {
+  .player-slot.left .fan-box,
+  .player-slot.right .fan-box {
+    width: calc(var(--cw, 46px) * 2.2);
+    height: calc(46px * (1 + (var(--n) - 1) * (1 - var(--lap))) + 70px);
+  }
+  .player-slot.left .fan-box .hand,
+  .player-slot.right .fan-box .hand {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: max-content;
+    max-width: none;
+  }
+  .player-slot.left .fan-box .hand { transform: translate(-50%, -50%) rotate(90deg); }
+  .player-slot.right .fan-box .hand { transform: translate(-50%, -50%) rotate(-90deg); }
+}
+
+/* ── Playing cards ── */
 .card {
-  width: 56px;
-  height: 84px;
-  border-radius: 7px;
+  position: relative;
+  display: block;
+  width: var(--cw, 64px);
+  height: calc(var(--cw, 64px) * 1.45);
+  padding: 0;
+  font-size: calc(var(--cw, 64px) * 0.19);
+  font-weight: 700;
+  line-height: 1;
+  letter-spacing: 0;
+  color: var(--suit-black);
+  background: var(--card-face);
+  border: 1px solid rgba(18, 24, 48, 0.35);
+  border-radius: calc(var(--cw) * 0.09);
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.4);
+  transition: transform 0.14s ease-out, box-shadow 0.14s ease-out;
+}
+
+button.card { min-height: 0; cursor: pointer; }
+
+.card.suit-hearts,
+.card.suit-diamonds { color: var(--suit-red); }
+
+/* corner indices, top-left and (turned over) bottom-right */
+.card .corner {
+  position: absolute;
   display: flex;
   flex-direction: column;
   align-items: center;
-  justify-content: center;
-  font-size: 0.85rem;
-  font-weight: 700;
-  border: 2px solid #ddd;
-  background: #fff;
-  color: #111;
-  box-shadow: 1px 2px 6px rgba(0,0,0,0.3);
-  transition: transform 0.12s, box-shadow 0.12s;
-  position: relative;
-}
-
-.card .card-rank {
-  font-size: 1rem;
+  gap: 0.12em;
+  top: 0.55em;
+  left: 0.3em;
+  width: 1.3em;
+  font-size: 0.74em;
   line-height: 1;
 }
 
-.card .card-suit {
-  font-size: 1.2rem;
-  line-height: 1;
-  margin-top: 2px;
+.card .corner.flip { top: auto; left: auto; bottom: 0.55em; right: 0.3em; transform: rotate(180deg); }
+.card .corner b { font-size: 1.2em; letter-spacing: -0.06em; }
+.card .suit { display: block; width: 1em; height: 1em; fill: currentColor; }
+
+.card .pip {
+  position: absolute;
+  left: var(--x);
+  top: var(--y);
+  transform: translate(-50%, -50%);
+  width: 1.05em;
+  height: 1.05em;
 }
 
-/* Suit colors — vivid */
-.card.suit-hearts,
-.card.suit-diamonds {
-  color: #e91e63;
-  border-color: #f06292;
+.card .pip.flip { transform: translate(-50%, -50%) rotate(180deg); }
+.card .pip .suit { width: 100%; height: 100%; }
+.card .pip.ace { width: 3.4em; height: 3.4em; }
+
+/* J, Q, K: a framed, double-ended figure with the suit repeated beside it */
+.card .court {
+  position: absolute;
+  inset: 12% 19%;
+  border: 1px solid currentColor;
+  background: #fffaf0;
+  --robe: var(--indigo);
 }
 
-.card.suit-spades,
-.card.suit-clubs {
-  color: #1a1a2e;
-  border-color: #555;
-}
+.card.suit-hearts .court,
+.card.suit-diamonds .court { --robe: var(--clay); }
 
-.card.suit-joker {
-  color: #9c27b0;
-  border-color: #ce93d8;
-  background: linear-gradient(135deg, #fffde7, #f3e5f5);
-}
+.card .court-art { display: block; width: 100%; height: 100%; }
 
-/* Hover / clickable cards */
-button.card {
-  cursor: pointer;
+.card .court-pip {
+  position: absolute;
+  top: 0.25em;
+  left: 0.2em;
+  width: 0.75em;
+  height: 0.75em;
 }
+.card .court-pip.flip { top: auto; left: auto; bottom: 0.25em; right: 0.2em; transform: rotate(180deg); }
+.card .court-pip .suit { width: 100%; height: 100%; }
 
-button.card:hover {
-  transform: translateY(-8px) scale(1.05);
-  box-shadow: 2px 8px 16px rgba(0,0,0,0.4);
-  border-color: var(--gold);
-}
+.card.suit-joker { color: var(--indigo); }
+.card .court.joker { inset: 12% 21%; border-color: var(--indigo); --robe: var(--indigo); }
 
-/* Hidden (opponent) cards */
+/* colours shared by the court artwork */
+.c-robe { fill: var(--robe); }
+.c-gold { fill: var(--saffron); }
+.c-teal { fill: var(--teal); }
+.c-clay { fill: var(--clay); }
+.c-skin { fill: #b9774a; }
+.c-hair { fill: #2a1a12; }
+.c-steel { fill: #d7dbe8; }
+
+/* Card backs: an indigo diamond lattice in saffron, framed in white like a real deck */
 .card.hidden {
-  width: 48px;
-  height: 72px;
-  color: #fff;
-  background: linear-gradient(135deg, #1a237e, #311b92);
-  border-color: #5c6bc0;
-  font-size: 1.3rem;
+  border: calc(var(--cw) * 0.07) solid var(--card-face);
+  background:
+    repeating-linear-gradient(45deg, transparent 0 calc(var(--cw) * 0.1), rgba(250, 186, 25, 0.85) calc(var(--cw) * 0.1) calc(var(--cw) * 0.115)),
+    repeating-linear-gradient(-45deg, transparent 0 calc(var(--cw) * 0.1), rgba(250, 186, 25, 0.85) calc(var(--cw) * 0.1) calc(var(--cw) * 0.115)),
+    var(--indigo);
+  font-size: 0;
 }
 
-/* Selected card */
+.card.hidden::after {
+  content: '';
+  position: absolute;
+  inset: 3px;
+  border: 1px solid var(--saffron);
+  border-radius: calc(var(--cw) * 0.05);
+}
+
+/* Hover / selected: the card is slid up out of the hand */
+button.card:hover,
 .card.selected {
-  outline: 3px solid var(--good);
+  transform: translateY(calc(var(--o) * var(--o) * 1.6px - 14px)) rotate(calc(var(--o) * var(--ang)));
+  box-shadow: 0 10px 14px rgba(0, 0, 0, 0.45);
+  z-index: 3;
+}
+
+.card.selected {
+  transform: translateY(calc(var(--o) * var(--o) * 1.6px - 30px)) rotate(calc(var(--o) * var(--ang)));
+  outline: 3px solid var(--saffron);
   outline-offset: 2px;
-  transform: translateY(-10px) scale(1.05);
-  background: #e8f5e9;
-  box-shadow: 0 6px 20px rgba(74, 222, 128, 0.5);
 }
 
-.card.selected.suit-hearts,
-.card.selected.suit-diamonds {
-  background: #fce4ec;
-}
-
-.card.selected.suit-joker {
-  background: #f3e5f5;
-}
-
-/* Top card on table */
-.top-card-display {
-  display: inline-flex;
-  vertical-align: middle;
-}
-
-.top-card-display .card {
-  width: 60px;
-  height: 90px;
-  font-size: 0.85rem;
-  box-shadow: 2px 4px 12px rgba(0,0,0,0.5);
-}
-
-.top-card-display .card .card-suit {
-  font-size: 1.3rem;
-}
-
-.warning { color: var(--warn); font-weight: 600; }
-.winner { color: var(--gold); font-weight: 700; text-shadow: 0 0 10px rgba(251, 191, 36, 0.5); }
-.meta { opacity: 0.7; margin-bottom: 0; font-size: 0.8rem; }
+.warning { color: var(--error); font-weight: 600; }
+.winner { color: var(--heading); font-weight: 800; }
+.meta { color: var(--ink-dim); margin-bottom: 0; font-size: 0.8rem; }
 
 /* ── Screen Cards (Auth / Lobby / Room) ── */
 .screen-card {
-  background: rgba(30, 40, 70, 0.7);
-  border: 1px solid rgba(168, 85, 247, 0.4);
-  border-radius: 16px;
+  background: var(--surface);
+  border: 3px solid var(--outline);
+  border-radius: 10px;
   padding: 1.5rem;
   max-width: 440px;
   margin: 1.5rem auto;
-  backdrop-filter: blur(10px);
+  box-shadow: 6px 6px 0 var(--outline);
   text-align: center;
 }
 
 .screen-card h2 {
   margin-top: 0;
-  color: var(--cyan);
+  font-family: var(--display);
+  font-weight: 400;
+  font-size: 1.4rem;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+  color: var(--ink);
+}
+
+.screen-card h3 {
+  font-family: var(--display);
+  font-weight: 400;
+  font-size: 0.95rem;
+  text-transform: uppercase;
+  color: var(--heading);
 }
 
 .screen-card label {
   display: block;
   margin-bottom: 0.4rem;
-  font-size: 0.85rem;
-  opacity: 0.8;
+  font-size: 0.9rem;
+  color: var(--ink-dim);
 }
 
 .screen-card input {
@@ -377,7 +634,7 @@ button.card:hover {
 
 .greeting {
   font-size: 0.95rem;
-  opacity: 0.8;
+  color: var(--ink-dim);
   margin-bottom: 1rem;
 }
 
@@ -389,33 +646,38 @@ button.card:hover {
 
 .divider {
   font-size: 0.8rem;
-  opacity: 0.5;
+  color: var(--ink-dim);
   margin: 0.3rem 0;
 }
 
 .error-msg {
-  color: var(--warn);
+  color: var(--error);
+  font-weight: 600;
   font-size: 0.85rem;
   margin-top: 0.5rem;
 }
 
 /* Room code display */
 .room-code {
-  font-size: 2.4rem;
-  font-weight: 800;
-  letter-spacing: 0.35em;
-  background: linear-gradient(90deg, var(--gold), var(--hot-pink));
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
-  padding: 0.5rem 0;
+  /* styled as a matatu number plate */
+  display: inline-block;
+  font-family: var(--display);
+  font-size: 2.2rem;
+  letter-spacing: 0.18em;
+  padding: 0.35rem 1rem 0.35rem 1.2rem;
+  margin: 0.5rem 0;
+  background: var(--saffron);
+  color: #121830;
+  border: 4px solid #121830;
+  border-radius: 10px;
+  box-shadow: 0 0 0 3px var(--card-face), 5px 5px 0 3px var(--outline);
   user-select: all;
 }
 
 .hint {
-  font-size: 0.8rem;
-  opacity: 0.6;
-  margin-top: 0;
+  font-size: 0.85rem;
+  color: var(--ink-dim);
+  margin-top: 0.5rem;
 }
 
 .player-list {
@@ -426,8 +688,9 @@ button.card:hover {
 
 .player-list li {
   padding: 0.5rem 0.75rem;
-  border-radius: 8px;
-  background: rgba(20, 24, 40, 0.6);
+  border-radius: 6px;
+  background: var(--surface-2);
+  border: 2px solid var(--line);
   margin-bottom: 0.35rem;
   font-size: 0.9rem;
   display: flex;
@@ -442,23 +705,53 @@ button.card:hover {
 }
 
 .btn-secondary {
-  background: rgba(60, 70, 110, 0.6);
-  border: 1px solid rgba(168, 85, 247, 0.3);
+  background: var(--surface-2);
+  color: var(--ink);
+  border: 2px solid var(--input-border);
 }
 
-.btn-secondary:hover {
-  background: rgba(80, 90, 140, 0.6);
+/* Share row on the room screen */
+.share-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin: 0.75rem 0 1rem;
 }
+
+.share-row button,
+.btn-whatsapp {
+  flex: 1 1 150px;
+  width: auto;
+  margin: 0;
+}
+
+.btn-whatsapp {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 44px;
+  padding: 0.5rem 0.85rem;
+  border: 2px solid var(--outline);
+  border-radius: 6px;
+  background: #25d366;
+  color: #0b2a14;
+  font-weight: 800;
+  text-decoration: none;
+  box-shadow: var(--sticker-shadow);
+}
+
+.btn-whatsapp:hover { transform: translate(-1px, -1px); box-shadow: 4px 4px 0 var(--outline); }
 
 /* Turn indicator */
 .turn-badge {
   display: inline-block;
-  background: var(--good);
-  color: #000;
-  font-size: 0.7rem;
-  font-weight: 700;
-  padding: 0.15rem 0.5rem;
-  border-radius: 10px;
+  background: var(--saffron);
+  color: var(--on-saffron);
+  font-family: var(--display);
+  font-size: 0.65rem;
+  padding: 0.2rem 0.5rem;
+  border: 2px solid var(--outline);
+  border-radius: 4px;
   margin-left: 0.3rem;
   animation: pulse-badge 1.5s ease-in-out infinite;
 }
@@ -470,7 +763,8 @@ button.card:hover {
 
 .waiting-indicator {
   font-size: 0.85rem;
-  color: var(--gold);
+  font-weight: 700;
+  color: var(--heading);
   animation: pulse-badge 1.5s ease-in-out infinite;
   margin-top: 0.5rem;
 }
@@ -500,13 +794,14 @@ button.card:hover {
 }
 
 .toast {
-  background: rgba(30, 40, 70, 0.95);
-  border: 1px solid var(--accent);
-  border-radius: 10px;
+  background: var(--toast-bg);
+  border: 2px solid var(--outline);
+  border-radius: 6px;
   padding: 0.6rem 1rem;
-  color: var(--ink);
-  font-size: 0.85rem;
-  backdrop-filter: blur(8px);
+  color: var(--toast-ink);
+  font-weight: 700;
+  font-size: 0.9rem;
+  box-shadow: var(--sticker-shadow);
   animation: toast-in 0.3s ease-out;
   max-width: 300px;
 }
@@ -527,22 +822,164 @@ button.card:hover {
 
 /* ── Responsive ── */
 @media (max-width: 768px) {
+  .app { padding: 0.75rem; }
+  .rules-btn { top: 0.25rem; right: 0.75rem; }
+
+  /* Every opponent stays on screen: top, then left + right side by side */
   .table-layout {
     grid-template-areas:
-      "top"
-      "table"
-      "bottom";
-    grid-template-columns: 1fr;
-    grid-template-rows: auto auto auto;
+      "top top"
+      "left right"
+      "table table"
+      "bottom bottom";
+    grid-template-columns: 1fr 1fr;
+    grid-template-rows: auto;
+    min-height: 0;
+    gap: 0.35rem;
+    padding: 0.75rem 0.5rem 1rem;
+    border-width: 8px;
+    border-radius: 22px;
   }
-  .player-slot.left,
-  .player-slot.right { display: none; }
-  .table-center {
-    border-radius: 24px;
-    aspect-ratio: auto;
-    max-width: 100%;
-    min-height: 200px;
-  }
-  .screen-card { margin: 1rem 0.5rem; }
-  .room-code { font-size: 1.8rem; }
+  .table-layout::before { inset: 5px; border-radius: 14px; }
+  .player-slot:empty { display: none; }
+  .table-layout:has(.player-slot.right:empty) .player-slot.left { grid-column: 1 / -1; }
+  .player-slot.top .fan-box { transform: none; }
+
+  .hand { --cw: 34px; padding: 14px 6px 4px; }
+  .player.active .hand { --cw: 62px; padding-top: 34px; }
+  .player h3 { font-size: 0.78rem; padding: 0.15rem 0.55rem; }
+  .table-center { --cw: 62px; gap: 2rem; padding: 0.25rem; }
+  .player-actions button { flex: 1 1 110px; }
+  .player-actions select { flex: 1 1 100px; }
+
+  .screen-card { margin: 1rem 0; padding: 1.25rem; }
+  .room-code { font-size: 1.7rem; }
+
+  #toastContainer { top: auto; bottom: 1rem; left: 1rem; right: 1rem; align-items: stretch; }
+  .toast { max-width: none; }
+}
+
+/* ── Rules dialog ── */
+.rules-btn {
+  position: absolute;
+  top: 1rem;
+  right: 1rem;
+  font-size: 0.85rem;
+}
+
+.rules-dialog {
+  max-width: min(560px, calc(100vw - 1.5rem));
+  max-height: calc(100vh - 2rem);
+  overflow-y: auto;
+  padding: 1.25rem 1.5rem;
+  background: var(--surface);
+  color: var(--ink);
+  border: 3px solid var(--outline);
+  border-radius: 10px;
+  box-shadow: 6px 6px 0 var(--outline);
+}
+
+.rules-dialog::backdrop { background: var(--backdrop); }
+
+.rules-dialog h2 {
+  margin-top: 0;
+  font-family: var(--display);
+  font-weight: 400;
+  font-size: 1.3rem;
+  text-transform: uppercase;
+  color: var(--heading);
+}
+
+.rules-dialog p { line-height: 1.5; margin: 0.6rem 0; }
+
+.rules-table { width: 100%; border-collapse: collapse; margin: 0.75rem 0; }
+.rules-table th,
+.rules-table td { padding: 0.45rem 0.5rem; border-top: 2px solid var(--line); text-align: left; vertical-align: top; font-size: 0.9rem; }
+.rules-table th { width: 4.5rem; font-family: var(--display); font-weight: 400; color: var(--heading); }
+
+.rules-dialog form { margin-top: 1rem; }
+.rules-dialog button { width: 100%; }
+
+/* ── Playful touches ── */
+.chip-mine { animation: chip-hop 1.4s ease-in-out infinite; }
+
+@keyframes chip-hop {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-3px); }
+}
+
+/* Confetti when someone wins a round */
+.confetti {
+  position: fixed;
+  inset: 0;
+  overflow: hidden;
+  pointer-events: none;
+  z-index: 900;
+}
+
+.confetti i {
+  position: absolute;
+  top: -5vh;
+  left: var(--x);
+  width: 10px;
+  height: 16px;
+  background: var(--c);
+  border: 1.5px solid var(--outline);
+  animation: confetti-fall var(--t) linear var(--d) forwards;
+}
+
+@keyframes confetti-fall {
+  to { transform: translateY(110vh) rotate(var(--r)); }
+}
+
+/* ── Accessibility ── */
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  padding: 0;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+.field-label {
+  display: block;
+  margin-bottom: 0.25rem;
+  font-size: 0.8rem;
+  color: var(--ink-dim);
+}
+
+:focus-visible {
+  outline: 3px solid var(--focus);
+  outline-offset: 3px;
+}
+
+/* Players picking cards need the ring to survive the dark panel and the cream card */
+button.card:focus-visible {
+  outline-color: var(--focus);
+  box-shadow: 0 0 0 3px var(--outline);
+}
+
+/* Keep state changes, drop the movement */
+@media (prefers-reduced-motion: reduce) {
+  .turn-badge,
+  .chip-mine,
+  .waiting-indicator { animation: none; }
+
+  .confetti { display: none; }
+
+  .toast,
+  .toast.toast-exit { animation: none; }
+
+  button,
+  button.card,
+  .card { transition: none; }
+
+  button:hover,
+  button:active,
+  button.card:hover,
+  .btn-whatsapp:hover { transform: none; }
 }
