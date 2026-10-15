@@ -1,16 +1,28 @@
+/*
+ * Niko Kadi — street-wise Kenyan theme.
+ * Matatu livery (red / black / green / white stripe), hand-painted signage type,
+ * yellow number plates, and a kanga-rimmed table. Dark asphalt ground for evening play.
+ */
 :root {
   color-scheme: dark;
-  --bg: #0a0e1a;
-  --felt: #1b5e20;
-  --felt-light: #2e7d32;
-  --card-bg: #1a2236;
-  --ink: #f8faff;
-  --accent: #a855f7;
-  --good: #4ade80;
-  --warn: #fb923c;
-  --hot-pink: #ec4899;
-  --cyan: #22d3ee;
-  --gold: #fbbf24;
+  --bg: #14100d;
+  --surface: #1f1914;
+  --surface-2: #2c241c;
+  --line: #4a3d31;
+  --ink: #f6efe2;
+  --ink-dim: #c4b8a4;
+  --paper: #fbf6ea;
+  --black: #0b0907;
+  --red: #d92d20;
+  --green: #0b7a3e;
+  --felt: #0d5c34;
+  --felt-light: #14753f;
+  --yellow: #ffc61a;
+  --warn: #ff9a3c;
+  --good: #7be0a0;
+  --display: 'Bungee', Impact, 'Arial Black', sans-serif;
+  --sticker-shadow: 3px 3px 0 var(--black);
+  --card-back: repeating-linear-gradient(135deg, var(--red) 0 7px, var(--black) 7px 12px, var(--green) 12px 19px, var(--black) 19px 24px);
 }
 
 * { box-sizing: border-box; }
@@ -18,8 +30,10 @@
 body {
   margin: 0;
   min-height: 100vh;
-  font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Ubuntu, Cantarell;
-  background: var(--bg);
+  font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Ubuntu, Cantarell, sans-serif;
+  background-color: var(--bg);
+  background-image: radial-gradient(rgba(246, 239, 226, 0.05) 1px, transparent 1px);
+  background-size: 14px 14px;
   color: var(--ink);
   overflow-x: hidden;
 }
@@ -31,61 +45,94 @@ body {
 }
 
 h1 {
-  margin-bottom: 0.25rem;
-  background: linear-gradient(90deg, var(--gold), var(--hot-pink), var(--accent));
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
-  font-size: 2rem;
+  margin: 0 0 1.25rem;
+  font-family: var(--display);
+  font-weight: 400;
+  font-size: clamp(1.8rem, 6vw, 2.6rem);
+  line-height: 1;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+  color: var(--yellow);
+  text-shadow: 3px 3px 0 var(--red);
 }
 
-.subtitle { margin-top: 0; opacity: 0.7; font-size: 0.9rem; }
-
-.controls {
-  background: rgba(30, 40, 70, 0.7);
-  border: 1px solid rgba(168, 85, 247, 0.4);
-  border-radius: 12px;
-  padding: 0.9rem;
-  margin-bottom: 1rem;
-  backdrop-filter: blur(8px);
+/* Matatu livery stripe under the title */
+h1::after {
+  content: '';
+  display: block;
+  height: 10px;
+  margin-top: 0.7rem;
+  border: 2px solid var(--black);
+  background: repeating-linear-gradient(
+    90deg,
+    var(--red) 0 36px,
+    var(--black) 36px 48px,
+    var(--green) 48px 84px,
+    var(--paper) 84px 96px
+  );
+  text-shadow: none;
 }
+
+.subtitle { margin-top: 0; color: var(--ink-dim); font-size: 0.95rem; }
 
 input {
   width: min(100%, 420px);
-  padding: 0.5rem;
-  border-radius: 8px;
-  border: 1px solid rgba(168, 85, 247, 0.5);
-  background: rgba(20, 24, 40, 0.8);
+  padding: 0.6rem 0.7rem;
+  border-radius: 6px;
+  border: 2px solid var(--ink-dim);
+  background: var(--black);
   color: var(--ink);
+  font-size: 1rem;
   margin-right: 0.5rem;
 }
 
+input::placeholder { color: #8d806d; }
+
 select {
   padding: 0.5rem;
-  border-radius: 8px;
-  border: 1px solid rgba(168, 85, 247, 0.5);
-  background: rgba(20, 24, 40, 0.8);
+  border-radius: 6px;
+  border: 2px solid var(--ink-dim);
+  background: var(--black);
   color: var(--ink);
   margin-right: 0.5rem;
 }
 
 button {
-  border: 0;
-  border-radius: 10px;
+  border: 2px solid var(--black);
+  border-radius: 6px;
   padding: 0.5rem 0.85rem;
-  background: linear-gradient(135deg, var(--accent), var(--hot-pink));
-  color: var(--ink);
-  font-weight: 600;
+  background: var(--red);
+  color: #fff;
+  font-weight: 800;
+  letter-spacing: 0.02em;
   cursor: pointer;
-  transition: transform 0.1s, box-shadow 0.1s;
+  box-shadow: var(--sticker-shadow);
+  transition: transform 0.08s, box-shadow 0.08s;
 }
 
 button:hover {
-  transform: scale(1.03);
-  box-shadow: 0 4px 15px rgba(168, 85, 247, 0.4);
+  transform: translate(-1px, -1px);
+  box-shadow: 4px 4px 0 var(--black);
 }
 
-button:disabled { opacity: 0.4; cursor: not-allowed; transform: none; box-shadow: none; }
+button:active {
+  transform: translate(2px, 2px);
+  box-shadow: 1px 1px 0 var(--black);
+}
+
+button:disabled { opacity: 0.45; cursor: not-allowed; transform: none; box-shadow: none; }
+
+/* Go actions are green; the red default is for draw / take-the-penalty */
+#authBtn, #createRoomBtn, #joinRoomBtn, #startGameBtn,
+#playSelectedBtn, #submitAnswerBtn, #nextRoundBtn {
+  background: var(--green);
+}
+
+/* Declaring Niko Kadi is the loudest button on the board */
+#declareBtn {
+  background: var(--yellow);
+  color: var(--black);
+}
 
 /* ── Table Layout ── */
 .table-layout {
@@ -103,8 +150,11 @@ button:disabled { opacity: 0.4; cursor: not-allowed; transform: none; box-shadow
 /* ── Center Table (felt) ── */
 .table-center {
   grid-area: table;
-  background: radial-gradient(ellipse at center, var(--felt-light), var(--felt), #0d3b12);
-  border: 4px solid #4a2c00;
+  /* kanga-style rim around the felt */
+  border: 12px solid transparent;
+  background:
+    radial-gradient(circle at center, var(--felt-light), var(--felt) 70%) padding-box,
+    repeating-conic-gradient(var(--red) 0 10deg, var(--paper) 10deg 20deg, var(--black) 20deg 30deg, var(--yellow) 30deg 40deg) border-box;
   border-radius: 50%;
   padding: 2rem;
   display: flex;
@@ -112,21 +162,19 @@ button:disabled { opacity: 0.4; cursor: not-allowed; transform: none; box-shadow
   align-items: center;
   justify-content: center;
   gap: 0.75rem;
-  box-shadow:
-    inset 0 0 40px rgba(0,0,0,0.4),
-    0 0 30px rgba(27, 94, 32, 0.3);
+  box-shadow: inset 0 0 40px rgba(0,0,0,0.45), 6px 6px 0 var(--black);
   min-height: 300px;
   aspect-ratio: 1;
   margin: auto;
-  max-width: 340px;
+  max-width: 360px;
   width: 100%;
 }
 
 .table-center .table-info {
   text-align: center;
   font-size: 0.8rem;
-  color: rgba(255,255,255,0.85);
-  text-shadow: 0 1px 3px rgba(0,0,0,0.5);
+  color: #fff;
+  text-shadow: 0 1px 2px rgba(0,0,0,0.7);
 }
 
 .table-center .table-info p { margin: 0.2rem 0; }
@@ -141,14 +189,16 @@ button:disabled { opacity: 0.4; cursor: not-allowed; transform: none; box-shadow
   width: 60px;
   height: 90px;
   border-radius: 8px;
-  background: linear-gradient(135deg, #1a237e, #283593);
-  border: 2px solid #5c6bc0;
+  background: var(--card-back);
+  border: 2px solid var(--paper);
   display: flex;
   align-items: center;
   justify-content: center;
   font-size: 0.7rem;
-  color: #aaa;
-  box-shadow: 2px 3px 8px rgba(0,0,0,0.5);
+  font-weight: 800;
+  color: #fff;
+  text-shadow: 0 0 4px var(--black), 0 0 4px var(--black), 0 0 4px var(--black);
+  box-shadow: 3px 3px 0 var(--black);
   text-align: center;
 }
 
@@ -165,29 +215,28 @@ button:disabled { opacity: 0.4; cursor: not-allowed; transform: none; box-shadow
 .player-slot.right { grid-area: right; }
 
 .player {
-  background: rgba(20, 28, 50, 0.75);
-  border: 1px solid rgba(100, 116, 180, 0.3);
-  border-radius: 14px;
+  background: var(--surface);
+  border: 2px solid var(--line);
+  border-radius: 10px;
   padding: 0.75rem;
-  backdrop-filter: blur(6px);
   width: 100%;
 }
 
 .player h3 {
   margin: 0 0 0.4rem 0;
-  font-size: 0.9rem;
-  color: var(--cyan);
+  font-size: 0.95rem;
+  color: var(--ink);
 }
 
+.player h3 small { color: var(--ink-dim); font-weight: 500; }
+
 .player.active {
-  border-color: var(--good);
-  box-shadow:
-    0 0 12px rgba(74, 222, 128, 0.3),
-    inset 0 0 12px rgba(74, 222, 128, 0.05);
+  border-color: var(--yellow);
+  box-shadow: 4px 4px 0 var(--black);
 }
 
 .player.active h3 {
-  color: var(--good);
+  color: var(--yellow);
 }
 
 /* Active player layout: hand + buttons side by side */
@@ -241,10 +290,10 @@ button:disabled { opacity: 0.4; cursor: not-allowed; transform: none; box-shadow
   justify-content: center;
   font-size: 0.85rem;
   font-weight: 700;
-  border: 2px solid #ddd;
-  background: #fff;
-  color: #111;
-  box-shadow: 1px 2px 6px rgba(0,0,0,0.3);
+  border: 2px solid var(--black);
+  background: var(--paper);
+  color: var(--black);
+  box-shadow: 2px 3px 0 rgba(0,0,0,0.65);
   transition: transform 0.12s, box-shadow 0.12s;
   position: relative;
 }
@@ -263,20 +312,17 @@ button:disabled { opacity: 0.4; cursor: not-allowed; transform: none; box-shadow
 /* Suit colors — vivid */
 .card.suit-hearts,
 .card.suit-diamonds {
-  color: #e91e63;
-  border-color: #f06292;
+  color: #c4201a;
 }
 
 .card.suit-spades,
 .card.suit-clubs {
-  color: #1a1a2e;
-  border-color: #555;
+  color: var(--black);
 }
 
 .card.suit-joker {
-  color: #9c27b0;
-  border-color: #ce93d8;
-  background: linear-gradient(135deg, #fffde7, #f3e5f5);
+  color: var(--green);
+  background: var(--yellow);
 }
 
 /* Hover / clickable cards */
@@ -285,37 +331,31 @@ button.card {
 }
 
 button.card:hover {
-  transform: translateY(-8px) scale(1.05);
-  box-shadow: 2px 8px 16px rgba(0,0,0,0.4);
-  border-color: var(--gold);
+  transform: translateY(-8px);
+  box-shadow: 3px 10px 0 rgba(0,0,0,0.65);
+  border-color: var(--black);
 }
 
 /* Hidden (opponent) cards */
 .card.hidden {
   width: 48px;
   height: 72px;
-  color: #fff;
-  background: linear-gradient(135deg, #1a237e, #311b92);
-  border-color: #5c6bc0;
-  font-size: 1.3rem;
+  background: var(--card-back);
+  border-color: var(--paper);
+  font-size: 0;
 }
 
 /* Selected card */
 .card.selected {
-  outline: 3px solid var(--good);
+  outline: 3px solid var(--yellow);
   outline-offset: 2px;
-  transform: translateY(-10px) scale(1.05);
-  background: #e8f5e9;
-  box-shadow: 0 6px 20px rgba(74, 222, 128, 0.5);
-}
-
-.card.selected.suit-hearts,
-.card.selected.suit-diamonds {
-  background: #fce4ec;
+  transform: translateY(-12px);
+  background: #fff3c4;
+  box-shadow: 3px 10px 0 rgba(0,0,0,0.65);
 }
 
 .card.selected.suit-joker {
-  background: #f3e5f5;
+  background: #ffe27a;
 }
 
 /* Top card on table */
@@ -328,7 +368,7 @@ button.card:hover {
   width: 60px;
   height: 90px;
   font-size: 0.85rem;
-  box-shadow: 2px 4px 12px rgba(0,0,0,0.5);
+  box-shadow: 3px 4px 0 rgba(0,0,0,0.7);
 }
 
 .top-card-display .card .card-suit {
@@ -336,31 +376,44 @@ button.card:hover {
 }
 
 .warning { color: var(--warn); font-weight: 600; }
-.winner { color: var(--gold); font-weight: 700; text-shadow: 0 0 10px rgba(251, 191, 36, 0.5); }
-.meta { opacity: 0.7; margin-bottom: 0; font-size: 0.8rem; }
+.winner { color: var(--yellow); font-weight: 800; }
+.meta { color: var(--ink-dim); margin-bottom: 0; font-size: 0.8rem; }
 
 /* ── Screen Cards (Auth / Lobby / Room) ── */
 .screen-card {
-  background: rgba(30, 40, 70, 0.7);
-  border: 1px solid rgba(168, 85, 247, 0.4);
-  border-radius: 16px;
+  background: var(--surface);
+  border: 3px solid var(--black);
+  border-radius: 10px;
   padding: 1.5rem;
   max-width: 440px;
   margin: 1.5rem auto;
-  backdrop-filter: blur(10px);
+  box-shadow: 6px 6px 0 var(--black), 0 0 0 2px var(--line);
   text-align: center;
 }
 
 .screen-card h2 {
   margin-top: 0;
-  color: var(--cyan);
+  font-family: var(--display);
+  font-weight: 400;
+  font-size: 1.4rem;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+  color: var(--ink);
+}
+
+.screen-card h3 {
+  font-family: var(--display);
+  font-weight: 400;
+  font-size: 0.95rem;
+  text-transform: uppercase;
+  color: var(--yellow);
 }
 
 .screen-card label {
   display: block;
   margin-bottom: 0.4rem;
-  font-size: 0.85rem;
-  opacity: 0.8;
+  font-size: 0.9rem;
+  color: var(--ink-dim);
 }
 
 .screen-card input {
@@ -377,7 +430,7 @@ button.card:hover {
 
 .greeting {
   font-size: 0.95rem;
-  opacity: 0.8;
+  color: var(--ink-dim);
   margin-bottom: 1rem;
 }
 
@@ -389,7 +442,7 @@ button.card:hover {
 
 .divider {
   font-size: 0.8rem;
-  opacity: 0.5;
+  color: var(--ink-dim);
   margin: 0.3rem 0;
 }
 
@@ -401,21 +454,25 @@ button.card:hover {
 
 /* Room code display */
 .room-code {
-  font-size: 2.4rem;
-  font-weight: 800;
-  letter-spacing: 0.35em;
-  background: linear-gradient(90deg, var(--gold), var(--hot-pink));
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
-  padding: 0.5rem 0;
+  /* styled as a matatu number plate */
+  display: inline-block;
+  font-family: var(--display);
+  font-size: 2.2rem;
+  letter-spacing: 0.18em;
+  padding: 0.35rem 1rem 0.35rem 1.2rem;
+  margin: 0.5rem 0;
+  background: var(--yellow);
+  color: var(--black);
+  border: 4px solid var(--black);
+  border-radius: 10px;
+  box-shadow: 0 0 0 3px var(--paper), 5px 5px 0 3px var(--black);
   user-select: all;
 }
 
 .hint {
-  font-size: 0.8rem;
-  opacity: 0.6;
-  margin-top: 0;
+  font-size: 0.85rem;
+  color: var(--ink-dim);
+  margin-top: 0.5rem;
 }
 
 .player-list {
@@ -426,8 +483,9 @@ button.card:hover {
 
 .player-list li {
   padding: 0.5rem 0.75rem;
-  border-radius: 8px;
-  background: rgba(20, 24, 40, 0.6);
+  border-radius: 6px;
+  background: var(--surface-2);
+  border: 2px solid var(--line);
   margin-bottom: 0.35rem;
   font-size: 0.9rem;
   display: flex;
@@ -442,23 +500,21 @@ button.card:hover {
 }
 
 .btn-secondary {
-  background: rgba(60, 70, 110, 0.6);
-  border: 1px solid rgba(168, 85, 247, 0.3);
-}
-
-.btn-secondary:hover {
-  background: rgba(80, 90, 140, 0.6);
+  background: var(--surface-2);
+  color: var(--ink);
+  border: 2px solid var(--ink-dim);
 }
 
 /* Turn indicator */
 .turn-badge {
   display: inline-block;
-  background: var(--good);
-  color: #000;
-  font-size: 0.7rem;
-  font-weight: 700;
-  padding: 0.15rem 0.5rem;
-  border-radius: 10px;
+  background: var(--yellow);
+  color: var(--black);
+  font-family: var(--display);
+  font-size: 0.65rem;
+  padding: 0.2rem 0.5rem;
+  border: 2px solid var(--black);
+  border-radius: 4px;
   margin-left: 0.3rem;
   animation: pulse-badge 1.5s ease-in-out infinite;
 }
@@ -470,7 +526,7 @@ button.card:hover {
 
 .waiting-indicator {
   font-size: 0.85rem;
-  color: var(--gold);
+  color: var(--yellow);
   animation: pulse-badge 1.5s ease-in-out infinite;
   margin-top: 0.5rem;
 }
@@ -500,13 +556,14 @@ button.card:hover {
 }
 
 .toast {
-  background: rgba(30, 40, 70, 0.95);
-  border: 1px solid var(--accent);
-  border-radius: 10px;
+  background: var(--paper);
+  border: 2px solid var(--black);
+  border-radius: 6px;
   padding: 0.6rem 1rem;
-  color: var(--ink);
-  font-size: 0.85rem;
-  backdrop-filter: blur(8px);
+  color: var(--black);
+  font-weight: 700;
+  font-size: 0.9rem;
+  box-shadow: var(--sticker-shadow);
   animation: toast-in 0.3s ease-out;
   max-width: 300px;
 }
