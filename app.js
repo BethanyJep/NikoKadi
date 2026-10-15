@@ -421,6 +421,38 @@
     return positions;
   }
 
+  // ── Status strip: the one place the current obligation is stated ──
+  function buildStatusStrip(turnText) {
+    var chips = [];
+    var turnCls = 'chip chip-turn';
+    var turnLabel = turnText;
+    if (gameState.winner) {
+      turnCls += ' chip-win';
+      turnLabel = 'Round over';
+    } else if (isMyPendingQuestion()) {
+      turnLabel = 'Answer the ' + escapeHtml(gameState.pendingQuestion.questionCard.label);
+      turnCls += ' chip-mine';
+    } else if (isMyTurn()) {
+      turnCls += ' chip-mine';
+    }
+    chips.push('<span class="' + turnCls + '">' + turnLabel + '</span>');
+
+    if (gameState.pendingPenalty) {
+      var amount = gameState.pendingPenalty.amount;
+      chips.push('<span class="chip chip-penalty">Penalty: draw ' + amount + '</span>');
+      if (isMyTurn()) {
+        chips.push('<span class="chip chip-hint">Block with a matching 2/3, Joker or Ace — or take it</span>');
+      }
+    }
+    if (gameState.requiredSuit) {
+      chips.push('<span class="chip chip-suit ' + suitClass(gameState.requiredSuit) + '">Suit: '
+        + escapeHtml(gameState.requiredSuit) + '</span>');
+    }
+    chips.push('<span class="chip chip-dir" title="Direction of play">'
+      + (gameState.direction === 1 ? '↻' : '↺') + '</span>');
+    return '<div class="status-strip">' + chips.join('') + '</div>';
+  }
+
   // ── Main game render ──
   function renderGame() {
     if (!gameState) return;
@@ -455,6 +487,8 @@
       turnText = isMyTurn() ? 'Your turn!' : escapeHtml(cpName) + "'s turn";
     }
 
+    var statusHtml = buildStatusStrip(turnText);
+
     var tableHtml = '<div class="table-center">'
       + '<div class="discard-area">'
       + '<span class="top-card-display"><span class="' + topCls + '">' + cardHtml(top) + '</span></span>'
@@ -462,14 +496,11 @@
       + '</div>'
       + '<div class="table-info">'
       + topInfo
-      + '<p>' + (gameState.direction === 1 ? '↻' : '↺') + ' ' + turnText + '</p>'
-      + (gameState.pendingPenalty ? '<p style="color:var(--warn);">⚠ Penalty: ' + gameState.pendingPenalty.amount + ' cards</p>' : '')
-      + (gameState.requiredSuit ? '<p>Suit: ' + escapeHtml(gameState.requiredSuit) + '</p>' : '')
       + (gameState.winner ? '<p class="winner">🏆 ' + escapeHtml(gameState.message) + '</p>' : '<p>' + escapeHtml(gameState.message) + '</p>')
       + '</div>'
       + '</div>';
 
-    board.innerHTML = '<div class="table-layout">'
+    board.innerHTML = statusHtml + '<div class="table-layout">'
       + '<div class="player-slot top">' + slotContent.top + '</div>'
       + '<div class="player-slot left">' + slotContent.left + '</div>'
       + tableHtml
