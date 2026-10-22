@@ -108,7 +108,7 @@ test('bot declares Niko Kadi and wins by going out on a number card', () => {
 });
 
 test('bot answers its own question', () => {
-  const state = makeState([['Q♥', '7♥', '9♠'], ['4♦', '5♦', '6♦']], 'Q♦');
+  const state = makeState([['Q♥', '7♥', '9♠'], ['4♦', '5♦', '6♦']], '5♥');
   KadiGame.botMove(state, 0);
   assert.ok(state.pendingQuestion);
   assert.equal(KadiGame.actingPlayerIndex(state), 0);
@@ -203,7 +203,7 @@ test('the starting player can be chosen for a new round', () => {
 });
 
 test('bot can play a Q/8 chain in either order', () => {
-  const s = makeState([['Q♠', '8♠', '7♠'], ['4♦', '5♦']], 'Q♥');
+  const s = makeState([['Q♠', '8♠', '7♠'], ['4♦', '5♦']], '5♠');
   KadiGame.botMove(s, 0);
   assert.ok(s.players[0].hand.length < 3);
 });
@@ -236,4 +236,40 @@ test('three players: Kickback reverses direction to the previous player', () => 
   KadiGame.playCards(state, 1, [7]);
   assert.equal(state.currentPlayer, 0);
   assert.equal(state.direction, -1);
+});
+
+test('after a J, Q or K a non-face card must match the suit', () => {
+  ['J♠', 'Q♠', 'K♠'].forEach((top) => {
+    const state = makeState([['2♦', '5♦', '6♠'], ['4♥', '9♣']], top);
+    KadiGame.playCards(state, 0, idsOf(state, 0, ['2♦']));
+    assert.equal(state.discardPile.length, 1, top + ': 2♦ must be rejected');
+    KadiGame.playCards(state, 0, idsOf(state, 0, ['6♠']));
+    assert.equal(state.discardPile.length, 2, top + ': 6♠ is accepted');
+  });
+});
+
+test('J, Q and K can be played together whatever their suits', () => {
+  const s1 = makeState([['J♥', 'J♠', '6♣'], ['4♥', '9♣']], 'J♦');
+  KadiGame.playCards(s1, 0, idsOf(s1, 0, ['J♥', 'J♠']));
+  assert.equal(s1.discardPile.length, 3);
+
+  const s2 = makeState([['J♥', 'Q♠', 'K♦', '6♣'], ['4♥', '9♣']], '9♥');
+  KadiGame.playCards(s2, 0, idsOf(s2, 0, ['K♦', 'J♥', 'Q♠']));
+  assert.equal(s2.discardPile.length, 4);
+
+  const s3 = makeState([['K♥', '6♣', '7♣'], ['4♥', '9♣']], 'J♠');
+  KadiGame.playCards(s3, 0, idsOf(s3, 0, ['K♥']));
+  assert.equal(s3.discardPile.length, 2);
+});
+
+test('a non-face card cannot be added to a J, Q or K set', () => {
+  const state = makeState([['J♠', '2♠', '6♠'], ['4♥', '9♣']], '9♠');
+  KadiGame.playCards(state, 0, idsOf(state, 0, ['J♠', '2♠']));
+  assert.equal(state.discardPile.length, 1);
+});
+
+test('Ace and Joker can still be played on a J, Q or K', () => {
+  const state = makeState([['A♣', 'JOKER♠', '5♣'], ['4♥', '9♣']], 'K♦');
+  assert.equal(KadiGame.cardMatches(state.players[0].hand[0], KadiGame.topDiscard(state), null), true);
+  assert.equal(KadiGame.cardMatches(state.players[0].hand[1], KadiGame.topDiscard(state), null), true);
 });

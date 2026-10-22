@@ -130,7 +130,13 @@
     if (requiredSuit) {
       return card.suit === requiredSuit || card.rank === top.rank;
     }
+    // J, Q and K go on each other freely; any other card after one must match its suit
+    if (isFace(top)) return isFace(card) || card.suit === top.suit;
     return card.rank === top.rank || card.suit === top.suit;
+  }
+
+  function isFace(card) {
+    return card.rank === 'J' || card.rank === 'Q' || card.rank === 'K';
   }
 
   function nextPlayerIndex(state, skip) {
@@ -247,7 +253,9 @@
         return state;
       }
     } else if (!cardMatches(card, topDiscard(state), state.requiredSuit)) {
-      state.message = card.label + ' does not match. Draw a card instead.';
+      var faceTop = isFace(topDiscard(state)) && !state.requiredSuit;
+      state.message = card.label + ' does not match' + (faceTop ? ' — after a ' + topDiscard(state).rank + ' only J/Q/K or the same suit' : '')
+        + '. Draw a card instead.';
       return state;
     }
 
@@ -368,7 +376,8 @@
   // The first card played must match the top card, whatever order the cards were picked in
   function orderForPlay(cards, top, requiredSuit) {
     var sameRank = cards.every(function (c) { return c.rank === cards[0].rank; });
-    if (sameRank) {
+    var allFace = cards.every(isFace);
+    if (sameRank || allFace) {
       var m = cards.findIndex(function (c) { return cardMatches(c, top, requiredSuit); });
       if (m < 0) return null;
       return [cards[m]].concat(cards.filter(function (c, i) { return i !== m; }));
@@ -459,6 +468,8 @@
         return c.type === 'question';
       });
 
+      var allFace = cards.every(isFace);
+
       var questionChainValid = false;
       if (allQuestion && !allSameRank) {
         // Check suit chain: each consecutive pair must share a suit
@@ -474,8 +485,8 @@
         }
       }
 
-      if (!allSameRank && !questionChainValid) {
-        state.message = 'Cards must share the same rank, or be Q/8 with connecting suits.';
+      if (!allSameRank && !allFace && !questionChainValid) {
+        state.message = 'Cards must share the same rank, be J/Q/K together, or be Q/8 with connecting suits.';
         return state;
       }
 
