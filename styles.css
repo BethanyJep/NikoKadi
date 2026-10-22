@@ -11,6 +11,8 @@
   /* the four colours — same in both modes */
   --clay: #c34018;
   --saffron: #faba19;
+  --win: #ffe21f;
+  --win-glow: rgba(255, 226, 31, 0.75);
   --teal: #0f758a;
   --indigo: #2b43a1;
   --on-clay: #ffffff;
@@ -218,7 +220,7 @@ button:disabled { opacity: 0.45; cursor: not-allowed; transform: none; box-shado
 
 .chip-turn { font-family: var(--display); font-weight: 400; font-size: 1.05rem; text-transform: uppercase; }
 .chip-mine { background: var(--saffron); color: var(--on-saffron); box-shadow: var(--sticker-shadow); }
-.chip-win { background: var(--teal); color: var(--on-teal); }
+.chip-win { background: var(--win); color: var(--on-saffron); box-shadow: 0 0 14px var(--win-glow); animation: win-pulse 1.4s ease-in-out infinite; }
 .chip-penalty { background: var(--clay); color: var(--on-clay); box-shadow: var(--sticker-shadow); }
 .chip-hint { background: transparent; border-color: transparent; color: var(--ink-dim); font-weight: 600; font-size: 0.85rem; }
 .chip-suit { background: var(--card-face); color: var(--suit-black); }
@@ -610,7 +612,31 @@ button.card:hover,
 }
 
 .warning { color: var(--error); font-weight: 600; }
-.winner { color: var(--heading); font-weight: 800; }
+.winner {
+  color: var(--on-saffron);
+  font-weight: 800;
+  font-size: 1.05rem;
+  background: var(--win);
+  border: 2px solid var(--outline);
+  border-radius: 8px;
+  padding: 0.35rem 0.7rem;
+  text-shadow: none;
+  box-shadow: 0 0 18px var(--win-glow);
+  animation: win-pop 0.5s ease-out, win-pulse 1.4s ease-in-out 0.5s infinite;
+}
+
+.player.winner-seat { outline: 3px solid var(--win); outline-offset: 4px; border-radius: 10px; box-shadow: 0 0 22px var(--win-glow); }
+
+@keyframes win-pop {
+  0% { transform: scale(0.7); opacity: 0; }
+  70% { transform: scale(1.06); opacity: 1; }
+  100% { transform: scale(1); }
+}
+
+@keyframes win-pulse {
+  0%, 100% { box-shadow: 0 0 10px var(--win-glow); }
+  50% { box-shadow: 0 0 26px var(--win-glow); }
+}
 .meta { color: var(--ink-dim); margin-bottom: 0; font-size: 0.8rem; }
 
 /* ── Screen Cards (Auth / Lobby / Room) ── */
@@ -1001,6 +1027,7 @@ button.card:focus-visible {
   .waiting-indicator { animation: none; }
 
   .confetti { display: none; }
+  .winner, .chip-win { animation: none; }
 
   .toast,
   .toast.toast-exit,
