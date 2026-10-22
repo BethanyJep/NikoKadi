@@ -377,7 +377,7 @@
   // Inner markup of a card face: corner indices plus pips, a court figure or an ace
   function cardHtml(card) {
     if (card.rank === 'JOKER') {
-      return '<span class="corner"><b>★</b></span><span class="corner flip"><b>★</b></span>'
+      return '<span class="corner joker-corner"><b>JOKER</b></span><span class="corner joker-corner flip"><b>JOKER</b></span>'
         + '<span class="court joker"><svg class="court-art" viewBox="0 0 60 96" aria-hidden="true">'
         + '<use href="#jester"/></svg></span>';
     }
