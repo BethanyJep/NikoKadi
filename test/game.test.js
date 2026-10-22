@@ -39,3 +39,94 @@ test('round score sums remaining card points', () => {
   // Joker 500 + 5 + K 10 + 2 (75) = 590; the winner's hand is not counted
   assert.equal(KadiGame.roundScore(state, 0), 590);
 });
+
+function makeState(hands, top, extra) {
+  let id = 1000;
+  const mk = (label) => {
+    const rank = label.slice(0, -1);
+    const suit = label.slice(-1);
+    return { id: id++, rank, suit, label, type: KadiGame.cardType(rank) };
+  };
+  const topCard = mk(top);
+  return Object.assign({
+    players: hands.map((h, i) => ({
+      name: i === 0 ? 'Bot' : 'P' + i,
+      userId: null,
+      isBot: i === 0,
+      hand: h.map(mk),
+      declaredNiko: false,
+      score: 0
+    })),
+    drawPile: [mk('9♣'), mk('9♦'), mk('4♣'), mk('5♣'), mk('6♣'), mk('7♣')],
+    discardPile: [topCard],
+    currentPlayer: 0,
+    direction: 1,
+    pendingPenalty: null,
+    pendingQuestion: null,
+    requiredSuit: null,
+    winner: null,
+    message: ''
+  }, extra || {});
+}
+
+test('bot plays only legal cards and draws when it has none', () => {
+  const state = makeState([['9♣', 'K♣'], ['4♦', '5♦', '6♦']], '4♥');
+  KadiGame.botMove(state, 0);
+  assert.equal(state.players[0].hand.length, 3);
+  assert.equal(state.currentPlayer, 1);
+});
+
+test('bot plays a matching card', () => {
+  const state = makeState([['4♣', '9♦', '10♠'], ['4♦', '5♦', '6♦']], '4♥');
+  KadiGame.botMove(state, 0);
+  assert.equal(KadiGame.topDiscard(state).rank, '4');
+  assert.equal(state.players[0].hand.length, 2);
+});
+
+test('bot takes a penalty when it cannot block', () => {
+  const state = makeState([['5♠', '6♠', '7♠'], ['4♦', '5♦', '6♦']], '2♥', {
+    pendingPenalty: { rank: '2', amount: 2 }
+  });
+  KadiGame.botMove(state, 0);
+  assert.equal(state.players[0].hand.length, 5);
+  assert.equal(state.pendingPenalty, null);
+});
+
+test('bot blocks a large penalty with a matching 3', () => {
+  const state = makeState([['3♥', '6♠', '7♠'], ['4♦', '5♦', '6♦']], '3♦', {
+    pendingPenalty: { rank: '3', amount: 3 }
+  });
+  KadiGame.botMove(state, 0);
+  assert.equal(state.pendingPenalty.amount, 6);
+  assert.equal(state.players[0].hand.length, 2);
+});
+
+test('bot declares Niko Kadi and wins by going out on a number card', () => {
+  const state = makeState([['5♥', '5♠'], ['4♦', '5♦', '6♦']], '5♦');
+  KadiGame.botMove(state, 0);
+  assert.equal(state.winner, 'Bot');
+});
+
+test('bot answers its own question', () => {
+  const state = makeState([['Q♥', '7♥', '9♠'], ['4♦', '5♦', '6♦']], 'Q♦');
+  KadiGame.botMove(state, 0);
+  assert.ok(state.pendingQuestion);
+  assert.equal(KadiGame.actingPlayerIndex(state), 0);
+  KadiGame.botMove(state, 0);
+  assert.equal(state.pendingQuestion, null);
+  assert.equal(state.players[0].hand.length, 1);
+});
+
+test('bots finish full games without stalling', () => {
+  for (let game = 0; game < 200; game += 1) {
+    const state = KadiGame.startRound([
+      { name: 'A', isBot: true }, { name: 'B', isBot: true }, { name: 'C', isBot: true }
+    ], {});
+    let moves = 0;
+    while (!state.winner && moves < 2000) {
+      KadiGame.botMove(state, KadiGame.actingPlayerIndex(state));
+      moves += 1;
+    }
+    assert.ok(state.winner, 'game ' + game + ' did not finish');
+  }
+});

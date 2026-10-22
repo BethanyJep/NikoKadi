@@ -65,6 +65,10 @@ Real playing-card faces on a dark cloth, with your hand fanned in front of you l
 | Real-time sync | Supabase Realtime (postgres_changes) |
 | Deployment | GitHub Actions → GitHub Pages |
 
+## Play vs the computer
+
+Choose **🤖 Play vs Computer** on the first screen or in the lobby, pick 1–3 bot opponents and start. Solo games run entirely in the browser — no room code, Supabase connection or other players needed. Bots follow the same rules as everyone else (they declare Niko Kadi, block penalties, answer questions and request suits); their logic lives in `game.js` (`botMove`).
+
 ## Setup
 
 ### 1. Create a Supabase project

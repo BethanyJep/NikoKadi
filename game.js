@@ -90,6 +90,7 @@
       return {
         name: name,
         userId: userId,
+        isBot: typeof item === 'string' ? false : !!item.isBot,
         hand: [],
         declaredNiko: false,
         score: scoreBoard[name] || 0
@@ -600,6 +601,177 @@
     return state;
   }
 
+
+  // ── Computer player ──
+  // The bot never reimplements the rules: every candidate move is tried on a
+  // copy of the state through the real engine and kept only if it was accepted.
+
+  function cloneState(state) {
+    return JSON.parse(JSON.stringify(state));
+  }
+
+  function subsetsUpTo(cards, maxSize) {
+    var result = [];
+    function walk(start, chosen) {
+      if (chosen.length > 0) result.push(chosen.slice());
+      if (chosen.length === maxSize) return;
+      for (var i = start; i < cards.length; i += 1) {
+        chosen.push(cards[i]);
+        walk(i + 1, chosen);
+        chosen.pop();
+      }
+    }
+    walk(0, []);
+    return result;
+  }
+
+  function sameKind(cards) {
+    if (cards.length === 1) return true;
+    var allPenalty = cards.every(function (c) { return c.type === 'penalty'; });
+    var allQuestion = cards.every(function (c) { return c.type === 'question'; });
+    var rank = cards[0].rank;
+    var allSameRank = cards.every(function (c) { return c.rank === rank; });
+    return allPenalty || allQuestion || allSameRank;
+  }
+
+  function mostCommonSuit(cards, fallback) {
+    var counts = {};
+    var best = fallback;
+    var bestCount = 0;
+    cards.forEach(function (c) {
+      if (c.suit === 'JOKER') return;
+      counts[c.suit] = (counts[c.suit] || 0) + 1;
+      if (counts[c.suit] > bestCount) {
+        bestCount = counts[c.suit];
+        best = c.suit;
+      }
+    });
+    return best;
+  }
+
+  function opponentPressure(state, playerIndex) {
+    var size = state.players.length;
+    var next = state.players[(playerIndex + state.direction + size) % size];
+    return next ? next.hand.length : 99;
+  }
+
+  function scorePlay(before, after, playerIndex, cards) {
+    var me = before.players[playerIndex];
+    if (after.winner) return 100000;
+
+    var score = cards.length * 12;
+    var remaining = me.hand.filter(function (c) {
+      return cards.every(function (p) { return p.id !== c.id; });
+    });
+    var nextHand = opponentPressure(before, playerIndex);
+
+    cards.forEach(function (c) {
+      if (c.type === 'answer') {
+        score += cardPoints(c) / 2;
+      } else if (c.rank === 'A') {
+        score -= remaining.length <= 2 ? 0 : 30;
+      } else if (c.rank === 'JOKER') {
+        score -= remaining.length <= 2 ? 0 : 20;
+        if (nextHand <= 2) score += 25;
+      } else if (c.type === 'penalty') {
+        score += penaltyValue(c) * 3 + (nextHand <= 2 ? 15 : 0);
+      } else if (c.type === 'jump') {
+        score += nextHand <= 3 ? 18 : 4;
+      } else if (c.type === 'kickback') {
+        score += 3;
+      }
+    });
+
+    if (cards.some(function (c) { return c.type === 'question'; })) {
+      score += after.pendingQuestion ? 30 : -25;
+    }
+
+    var newTop = after.discardPile[after.discardPile.length - 1];
+    var suit = after.requiredSuit || (newTop && newTop.suit);
+    score += remaining.filter(function (c) { return c.suit === suit; }).length * 4;
+
+    if (remaining.length === 0) {
+      // Going out without winning costs a penalty card
+      score -= 60;
+    }
+    if (remaining.length === 1 && canWinWithCard(remaining[0])) score += 15;
+    return score;
+  }
+
+  function planBotMove(state, playerIndex) {
+    var player = state.players[playerIndex];
+
+    if (state.pendingQuestion && state.pendingQuestion.playerIndex === playerIndex) {
+      var qCard = state.pendingQuestion.questionCard;
+      var groups = {};
+      availableAnswerCards(player, qCard).forEach(function (c) {
+        (groups[c.rank] = groups[c.rank] || []).push(c);
+      });
+      var bestGroup = null;
+      Object.keys(groups).forEach(function (rank) {
+        var group = groups[rank];
+        var points = group.reduce(function (sum, c) { return sum + cardPoints(c); }, 0);
+        if (!bestGroup || points > bestGroup.points) bestGroup = { cards: group, points: points };
+      });
+      if (!bestGroup) return { type: 'none' };
+      return { type: 'answer', cardIds: bestGroup.cards.map(function (c) { return c.id; }) };
+    }
+
+    if (state.currentPlayer !== playerIndex) return { type: 'none' };
+
+    var penalty = state.pendingPenalty ? state.pendingPenalty.amount : 0;
+    var best = { type: 'draw', score: penalty ? -penalty * 8 : -40 };
+
+    subsetsUpTo(player.hand, 3).forEach(function (cards) {
+      if (!sameKind(cards)) return;
+      var ids = cards.map(function (c) { return c.id; });
+      var remaining = player.hand.filter(function (c) { return ids.indexOf(c.id) < 0; });
+      var suitChoice = mostCommonSuit(remaining, cards[cards.length - 1].suit);
+      if (suitChoice === 'JOKER') suitChoice = '♠';
+
+      var trial = cloneState(state);
+      playCards(trial, playerIndex, ids, suitChoice);
+      var stillHeld = trial.players[playerIndex].hand.some(function (c) { return ids.indexOf(c.id) >= 0; });
+      if (stillHeld) return;
+
+      var score = scorePlay(state, trial, playerIndex, cards);
+      if (penalty && !trial.winner) {
+        // Blocking saves the penalty cards, so weigh that against what is spent
+        score += penalty * 8;
+      }
+      score += Math.random();
+      if (score > best.score) {
+        best = { type: 'play', cardIds: ids, suit: suitChoice, score: score };
+      }
+    });
+
+    return best;
+  }
+
+  // Plays one action for the bot on the real state and returns what it did.
+  function botMove(state, playerIndex) {
+    var player = state.players[playerIndex];
+    if (!player || state.winner) return state;
+
+    if (player.hand.length <= 2 && !player.declaredNiko) {
+      declareNiko(state, playerIndex);
+    }
+
+    var plan = planBotMove(state, playerIndex);
+    if (plan.type === 'answer') {
+      answerQuestion(state, playerIndex, plan.cardIds);
+    } else if (plan.type === 'play') {
+      playCards(state, playerIndex, plan.cardIds, plan.suit);
+    } else if (plan.type === 'draw') {
+      drawOrTakePenalty(state, playerIndex);
+    }
+    return state;
+  }
+
+  function actingPlayerIndex(state) {
+    return state.pendingQuestion ? state.pendingQuestion.playerIndex : state.currentPlayer;
+  }
+
   return {
     SUITS: SUITS,
     cardType: cardType,
@@ -616,6 +788,9 @@
     dealCount: dealCount,
     penaltyValue: penaltyValue,
     roundScore: roundScore,
-    topDiscard: topDiscard
+    topDiscard: topDiscard,
+    botMove: botMove,
+    planBotMove: planBotMove,
+    actingPlayerIndex: actingPlayerIndex
   };
 }));

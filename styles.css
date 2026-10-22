@@ -620,7 +620,8 @@ button.card:hover,
   color: var(--ink-dim);
 }
 
-.screen-card input {
+.screen-card input,
+.screen-card select {
   width: 100%;
   margin-bottom: 0.75rem;
 }

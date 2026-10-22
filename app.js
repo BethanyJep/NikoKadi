@@ -9,12 +9,19 @@
   var selectedCardIds = [];
   var scores = {};
   var roomChannel = null;
+  var soloMode = false;
+  var soloReturn = 'auth';
+  var onlineUser = null;
+  var botTimer = null;
+  var BOT_DELAY = 1100;
+  var BOT_NAMES = ['Bot Juma', 'Bot Amani', 'Bot Zuri'];
 
   // ── DOM refs ──
   var screens = {
     auth: document.getElementById('authScreen'),
     lobby: document.getElementById('lobbyScreen'),
     room: document.getElementById('roomScreen'),
+    solo: document.getElementById('soloScreen'),
     game: document.getElementById('gameScreen')
   };
 
@@ -190,13 +197,14 @@
         return { name: p.display_name, userId: p.user_id };
       });
       gameState = KadiGame.startRound(players, scores);
-      await Multiplayer.saveGameState(currentRoom.id, gameState, currentUser.id);
+      await persistState();
       await Lobby.startGame(currentRoom.id);
       enterGame();
     } catch (err) { showError('roomError', 'Failed to start: ' + err.message); }
   }
 
   async function handleLeaveRoom() {
+    if (soloMode) { exitSolo(); return; }
     try {
       if (roomChannel) { supabase.removeChannel(roomChannel); roomChannel = null; }
       Multiplayer.unsubscribe();
@@ -209,6 +217,71 @@
     gameState = null;
     selectedCardIds = [];
     showScreen('lobby');
+  }
+
+  // ── Solo (vs computer) ──
+  async function persistState() {
+    if (soloMode) return;
+    await Multiplayer.saveGameState(currentRoom.id, gameState, currentUser.id);
+  }
+
+  function openSoloSetup(from) {
+    soloReturn = from;
+    if (from === 'auth') {
+      var name = document.getElementById('displayName').value.trim();
+      if (name) Auth.setDisplayName(name);
+    }
+    showScreen('solo');
+  }
+
+  function startSoloGame() {
+    var count = Number(document.getElementById('botCount').value) || 1;
+    var name = Auth.getDisplayName() || 'You';
+    var players = [{ name: name, userId: 'local-player' }];
+    for (var i = 0; i < count; i++) {
+      players.push({ name: BOT_NAMES[i], userId: 'local-bot-' + i, isBot: true });
+    }
+    soloMode = true;
+    onlineUser = currentUser;
+    currentUser = { id: 'local-player' };
+    currentRoom = null;
+    scores = {};
+    gameState = KadiGame.startRound(players, scores);
+    enterGame();
+  }
+
+  function exitSolo() {
+    clearTimeout(botTimer);
+    botTimer = null;
+    soloMode = false;
+    gameState = null;
+    selectedCardIds = [];
+    scores = {};
+    currentUser = onlineUser;
+    onlineUser = null;
+    showScreen(soloReturn === 'lobby' ? 'lobby' : 'auth');
+  }
+
+  function scheduleBot() {
+    if (!soloMode || botTimer || !gameState || gameState.winner) return;
+    var idx = KadiGame.actingPlayerIndex(gameState);
+    var actor = gameState.players[idx];
+    if (!actor || !actor.isBot) return;
+    botTimer = setTimeout(function () {
+      botTimer = null;
+      if (!soloMode || !gameState || gameState.winner) return;
+      KadiGame.botMove(gameState, idx);
+      recordWinner();
+      renderGame();
+      if (isMyTurn() && !gameState.winner) showToast("It's your turn!");
+    }, BOT_DELAY);
+  }
+
+  function recordWinner() {
+    if (!gameState.winner) return;
+    scores[gameState.winner] = gameState.players.find(function (p) {
+      return p.name === gameState.winner;
+    }).score;
   }
 
   // ── Game Screen ──
@@ -229,15 +302,17 @@
     findMyPlayerIndex();
     selectedCardIds = [];
 
-    Multiplayer.subscribeToGameState(currentRoom.id, function (newState, updatedBy) {
-      if (updatedBy !== currentUser.id) {
-        gameState = newState;
-        findMyPlayerIndex();
-        selectedCardIds = [];
-        renderGame();
-        if (isMyTurn()) showToast("It's your turn!");
-      }
-    });
+    if (!soloMode) {
+      Multiplayer.subscribeToGameState(currentRoom.id, function (newState, updatedBy) {
+        if (updatedBy !== currentUser.id) {
+          gameState = newState;
+          findMyPlayerIndex();
+          selectedCardIds = [];
+          renderGame();
+          if (isMyTurn()) showToast("It's your turn!");
+        }
+      });
+    }
 
     renderGame();
     if (isMyTurn()) showToast("It's your turn!");
@@ -369,7 +444,7 @@
       }).score;
     }
     renderGame();
-    await Multiplayer.saveGameState(currentRoom.id, gameState, currentUser.id);
+    await persistState();
   }
 
   async function drawCard() {
@@ -378,14 +453,14 @@
     KadiGame.drawOrTakePenalty(gameState, myPlayerIndex);
     selectedCardIds = [];
     renderGame();
-    await Multiplayer.saveGameState(currentRoom.id, gameState, currentUser.id);
+    await persistState();
   }
 
   async function declareNiko() {
     // Can declare right after playing, even if turn has passed
     KadiGame.declareNiko(gameState, myPlayerIndex);
     renderGame();
-    await Multiplayer.saveGameState(currentRoom.id, gameState, currentUser.id);
+    await persistState();
   }
 
   async function submitAnswer() {
@@ -399,17 +474,17 @@
       }).score;
     }
     renderGame();
-    await Multiplayer.saveGameState(currentRoom.id, gameState, currentUser.id);
+    await persistState();
   }
 
   async function nextRound() {
     var players = gameState.players.map(function (p) {
-      return { name: p.name, userId: p.userId };
+      return { name: p.name, userId: p.userId, isBot: p.isBot };
     });
     gameState = KadiGame.startRound(players, scores);
     selectedCardIds = [];
     renderGame();
-    await Multiplayer.saveGameState(currentRoom.id, gameState, currentUser.id);
+    await persistState();
   }
 
   // ── Player card list rendering ──
@@ -629,6 +704,8 @@
     if (declareBtn) declareBtn.addEventListener('click', declareNiko);
     if (nextRoundBtn) nextRoundBtn.addEventListener('click', nextRound);
     if (submitAnswerBtn) submitAnswerBtn.addEventListener('click', submitAnswer);
+
+    scheduleBot();
   }
 
   // ── Event delegation for card clicks ──
@@ -642,6 +719,12 @@
   document.getElementById('authBtn').addEventListener('click', handleAuth);
   document.getElementById('displayName').addEventListener('keydown', function (e) {
     if (e.key === 'Enter') handleAuth();
+  });
+  document.getElementById('authSoloBtn').addEventListener('click', function () { openSoloSetup('auth'); });
+  document.getElementById('lobbySoloBtn').addEventListener('click', function () { openSoloSetup('lobby'); });
+  document.getElementById('soloStartBtn').addEventListener('click', startSoloGame);
+  document.getElementById('soloBackBtn').addEventListener('click', function () {
+    showScreen(soloReturn === 'lobby' ? 'lobby' : 'auth');
   });
   document.getElementById('createRoomBtn').addEventListener('click', handleCreateRoom);
   document.getElementById('joinRoomBtn').addEventListener('click', handleJoinRoom);
