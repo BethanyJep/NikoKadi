@@ -584,6 +584,7 @@
 
     var seatCls = 'seat-' + (playerIndex % 4);
     var currentCls = isCurrent && !gameState.winner ? ' current' : '';
+    if (gameState.winner === player.name) currentCls += ' winner-seat';
     return '<section class="player ' + seatCls + currentCls + (isMe ? ' active' : '') + '">'
       + '<h3>' + escapeHtml(player.name) + (isMe ? ' (you)' : '')
       + ' <small>(' + player.hand.length + ' cards)</small> ' + turnBadge + '</h3>'
@@ -606,7 +607,7 @@
 
   // Deterministic pieces so re-renders don't reshuffle the burst
   function confettiHtml() {
-    var colors = ['--clay', '--saffron', '--teal', '--indigo'];
+    var colors = ['--win', '--saffron', '--clay', '--teal'];
     var bits = '';
     for (var i = 0; i < 36; i++) {
       bits += '<i style="--x:' + ((i * 29) % 100) + 'vw;--c:var(' + colors[i % colors.length]
