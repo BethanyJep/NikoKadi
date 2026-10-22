@@ -223,6 +223,9 @@ button:disabled { opacity: 0.45; cursor: not-allowed; transform: none; box-shado
 .chip-win { background: var(--win); color: var(--on-saffron); box-shadow: 0 0 14px var(--win-glow); animation: win-pulse 1.4s ease-in-out infinite; }
 .chip-penalty { background: var(--clay); color: var(--on-clay); box-shadow: var(--sticker-shadow); }
 .chip-hint { background: transparent; border-color: transparent; color: var(--ink-dim); font-weight: 600; font-size: 0.85rem; }
+.chip-top { background: var(--card-face); color: var(--suit-black); gap: 0.3em; }
+.chip-top.suit-hearts, .chip-top.suit-diamonds { color: var(--suit-red); }
+.chip-top.suit-joker { color: var(--indigo); }
 .chip-suit { background: var(--card-face); color: var(--suit-black); }
 .chip-suit.suit-hearts, .chip-suit.suit-diamonds { color: var(--suit-red); }
 .chip-dir { background: transparent; border-color: transparent; font-size: 1.4rem; color: var(--ink-dim); margin-left: auto; }

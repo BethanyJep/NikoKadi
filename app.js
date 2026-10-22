@@ -633,6 +633,12 @@
     }
     chips.push('<span class="' + turnCls + '">' + turnLabel + '</span>');
 
+    var topCard = KadiGame.topDiscard(gameState);
+    if (topCard) {
+      chips.push('<span class="chip chip-top ' + suitClass(topCard.suit) + '">Top card: <strong>'
+        + escapeHtml(topCard.rank === 'JOKER' ? 'JOKER' : topCard.label) + '</strong></span>');
+    }
+
     if (gameState.pendingPenalty) {
       var amount = gameState.pendingPenalty.amount;
       chips.push('<span class="chip chip-penalty">Penalty: draw ' + amount + '</span>');
