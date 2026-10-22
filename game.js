@@ -130,6 +130,8 @@
     if (requiredSuit) {
       return card.suit === requiredSuit || card.rank === top.rank;
     }
+    // After a J, Q or K only the suit counts, not the rank
+    if (top.rank === 'J' || top.rank === 'Q' || top.rank === 'K') return card.suit === top.suit;
     return card.rank === top.rank || card.suit === top.suit;
   }
 
@@ -247,7 +249,9 @@
         return state;
       }
     } else if (!cardMatches(card, topDiscard(state), state.requiredSuit)) {
-      state.message = card.label + ' does not match. Draw a card instead.';
+      var faceTop = ['J', 'Q', 'K'].indexOf(topDiscard(state).rank) >= 0 && !state.requiredSuit;
+      state.message = card.label + ' does not match' + (faceTop ? ' — after a ' + topDiscard(state).rank + ' the suit must match' : '')
+        + '. Draw a card instead.';
       return state;
     }
 

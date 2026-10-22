@@ -108,7 +108,7 @@ test('bot declares Niko Kadi and wins by going out on a number card', () => {
 });
 
 test('bot answers its own question', () => {
-  const state = makeState([['Q♥', '7♥', '9♠'], ['4♦', '5♦', '6♦']], 'Q♦');
+  const state = makeState([['Q♥', '7♥', '9♠'], ['4♦', '5♦', '6♦']], '5♥');
   KadiGame.botMove(state, 0);
   assert.ok(state.pendingQuestion);
   assert.equal(KadiGame.actingPlayerIndex(state), 0);
@@ -203,7 +203,7 @@ test('the starting player can be chosen for a new round', () => {
 });
 
 test('bot can play a Q/8 chain in either order', () => {
-  const s = makeState([['Q♠', '8♠', '7♠'], ['4♦', '5♦']], 'Q♥');
+  const s = makeState([['Q♠', '8♠', '7♠'], ['4♦', '5♦']], '5♠');
   KadiGame.botMove(s, 0);
   assert.ok(s.players[0].hand.length < 3);
 });
@@ -236,4 +236,21 @@ test('three players: Kickback reverses direction to the previous player', () => 
   KadiGame.playCards(state, 1, [7]);
   assert.equal(state.currentPlayer, 0);
   assert.equal(state.direction, -1);
+});
+
+test('after a J, Q or K the next card must match the suit, not the rank', () => {
+  ['J♦', 'Q♦', 'K♦'].forEach((top) => {
+    const rank = top.slice(0, -1);
+    const state = makeState([[rank + '♣', '5♣', '6♦'], ['4♥', '9♣']], top);
+    KadiGame.playCards(state, 0, idsOf(state, 0, [rank + '♣']));
+    assert.equal(state.discardPile.length, 1, top + ' rank match should be rejected');
+    KadiGame.playCards(state, 0, idsOf(state, 0, ['6♦']));
+    assert.equal(state.discardPile.length, 2, top + ' suit match should be accepted');
+  });
+});
+
+test('Ace and Joker can still be played on a J, Q or K', () => {
+  const state = makeState([['A♣', 'JOKER♠', '5♣'], ['4♥', '9♣']], 'K♦');
+  assert.equal(KadiGame.cardMatches(state.players[0].hand[0], KadiGame.topDiscard(state), null), true);
+  assert.equal(KadiGame.cardMatches(state.players[0].hand[1], KadiGame.topDiscard(state), null), true);
 });
