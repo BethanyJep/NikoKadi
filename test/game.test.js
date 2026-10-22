@@ -130,3 +130,80 @@ test('bots finish full games without stalling', () => {
     assert.ok(state.winner, 'game ' + game + ' did not finish');
   }
 });
+
+function idsOf(state, index, labels) {
+  return labels.map((l) => state.players[index].hand.find((c) => c.label === l).id);
+}
+
+test('playing 2+2 together passes the turn once (2 players)', () => {
+  const s = makeState([['2♥', '2♠', '7♦'], ['4♦', '5♦', '6♦']], '5♥');
+  KadiGame.playCards(s, 0, idsOf(s, 0, ['2♥', '2♠']));
+  assert.equal(s.currentPlayer, 1);
+  assert.equal(s.pendingPenalty.amount, 4);
+});
+
+test('playing 2+2 together does not skip anyone (3 players)', () => {
+  const s = makeState([['2♥', '2♠', '7♦'], ['4♦', '5♦'], ['4♠', '5♠']], '5♥');
+  KadiGame.playCards(s, 0, idsOf(s, 0, ['2♥', '2♠']));
+  assert.equal(s.currentPlayer, 1);
+});
+
+test('stacking penalty cards together passes the turn once', () => {
+  const s = makeState([['2♥', '3♦', '7♦'], ['4♦', '5♦'], ['4♠', '5♠']], '2♦', {
+    pendingPenalty: { rank: '2', amount: 2 }
+  });
+  KadiGame.playCards(s, 0, idsOf(s, 0, ['2♥', '3♦']));
+  assert.equal(s.currentPlayer, 1);
+  assert.equal(s.pendingPenalty.amount, 7);
+});
+
+test('multi-card play does not depend on selection order', () => {
+  [['7♥', '7♠'], ['7♠', '7♥']].forEach((order) => {
+    const s = makeState([['7♥', '7♠', '9♦'], ['4♦', '5♦']], '5♠');
+    KadiGame.playCards(s, 0, idsOf(s, 0, order));
+    assert.equal(s.players[0].hand.length, 1, order.join(' '));
+    assert.equal(s.discardPile.length, 3, order.join(' '));
+  });
+});
+
+test('multi-card play is rejected when no card matches', () => {
+  const s = makeState([['7♥', '7♣', '9♦'], ['4♦', '5♦']], '5♠');
+  KadiGame.playCards(s, 0, idsOf(s, 0, ['7♥', '7♣']));
+  assert.equal(s.players[0].hand.length, 3);
+  assert.equal(s.currentPlayer, 0);
+});
+
+test('a Joker cannot be bundled with a different rank', () => {
+  const s = makeState([['7♠', '9♦', '4♥'], ['4♦']], '5♠');
+  s.players[0].hand.push({ id: 999, rank: 'JOKER', suit: 'JOKER', label: 'JOKER', type: 'penalty' });
+  KadiGame.playCards(s, 0, [s.players[0].hand[0].id, 999]);
+  assert.equal(s.players[0].hand.length, 4);
+  assert.equal(s.pendingPenalty, null);
+});
+
+test('double Jump never skips the player who played it', () => {
+  const two = makeState([['J♥', 'J♠', '7♦'], ['4♦', '5♦']], '5♥');
+  KadiGame.playCards(two, 0, idsOf(two, 0, ['J♥', 'J♠']));
+  assert.equal(two.currentPlayer, 0);
+
+  const three = makeState([['J♥', 'J♠', '7♦'], ['4♦', '5♦'], ['4♠', '5♠']], '5♥');
+  KadiGame.playCards(three, 0, idsOf(three, 0, ['J♥', 'J♠']));
+  assert.equal(three.currentPlayer, 0);
+
+  const single = makeState([['J♥', '7♦'], ['4♦'], ['4♠']], '5♥');
+  KadiGame.playCard(single, 0, idsOf(single, 0, ['J♥'])[0]);
+  assert.equal(single.currentPlayer, 2);
+});
+
+test('the starting player can be chosen for a new round', () => {
+  const s = KadiGame.startRound([{ name: 'A' }, { name: 'B' }, { name: 'C' }], {}, 2);
+  assert.equal(s.currentPlayer, 2);
+  assert.equal(s.message, 'C starts!');
+  assert.equal(KadiGame.startRound(['A', 'B'], {}).currentPlayer, 0);
+});
+
+test('bot can play a Q/8 chain in either order', () => {
+  const s = makeState([['Q♠', '8♠', '7♠'], ['4♦', '5♦']], 'Q♥');
+  KadiGame.botMove(s, 0);
+  assert.ok(s.players[0].hand.length < 3);
+});
