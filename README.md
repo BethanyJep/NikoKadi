@@ -128,8 +128,8 @@ Play a card that matches the top card by **suit or rank**, or **draw a card** (w
 | **3** | Penalty | Next player draws 3 — unless they block |
 | **Joker** | Penalty | Next player draws 5; can be played on anything and keeps the previous suit in force |
 | **A** | Ace | Can be played on anything; you **request a suit** that the next card must match. An Ace also blocks a pending penalty |
-| **J** | Jump | Skips the next player. Each Jump in a set skips one more player, but never the player who played them |
-| **K** | Kickback | Reverses the direction of play. Each K reverses once, so two in one play cancel out |
+| **J** | Jump | Skips the next player (with two players you simply play again). Each Jump in a set skips one more player, but never the player who played them |
+| **K** | Kickback | Reverses the direction of play. Each K reverses once, so two in one play cancel out. With two players, a single K sends play straight back to you |
 | **Q / 8** | Question | You must **answer** it in the same turn (see below) |
 | **4–10** | Answer | Plain number cards; used to answer Questions and to win |
 

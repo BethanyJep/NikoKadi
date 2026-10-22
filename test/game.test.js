@@ -207,3 +207,33 @@ test('bot can play a Q/8 chain in either order', () => {
   KadiGame.botMove(s, 0);
   assert.ok(s.players[0].hand.length < 3);
 });
+
+test('two players: a Jump brings the turn back to the player who played it', () => {
+  const state = makeState([['J♦', '5♦', '6♣'], ['4♦', '9♣']], '9♦');
+  state.players[0].isBot = false;
+  KadiGame.playCards(state, 0, idsOf(state, 0, ['J♦']));
+  assert.equal(state.currentPlayer, 0);
+  assert.match(state.message, /plays again/);
+});
+
+test('two players: a single Kickback gives the same player another turn', () => {
+  const state = makeState([['K♦', '5♦', '6♣'], ['4♦', '9♣']], '9♦');
+  KadiGame.playCards(state, 0, idsOf(state, 0, ['K♦']));
+  assert.equal(state.currentPlayer, 0);
+  assert.equal(state.direction, -1);
+});
+
+test('two players: two Kickbacks cancel out and the opponent plays', () => {
+  const state = makeState([['K♦', 'K♣', '6♣'], ['4♦', '9♣']], '9♦');
+  KadiGame.playCards(state, 0, idsOf(state, 0, ['K♦', 'K♣']));
+  assert.equal(state.currentPlayer, 1);
+  assert.equal(state.direction, 1);
+});
+
+test('three players: Kickback reverses direction to the previous player', () => {
+  const state = makeState([['5♣', 'K♦', '6♣'], ['4♦', '9♣'], ['4♣', '7♣']], '9♦', { currentPlayer: 1 });
+  state.players[1].hand = [{ id: 7, rank: 'K', suit: '♦', label: 'K♦', type: 'kickback' }, { id: 8, rank: '5', suit: '♦', label: '5♦', type: 'answer' }];
+  KadiGame.playCards(state, 1, [7]);
+  assert.equal(state.currentPlayer, 0);
+  assert.equal(state.direction, -1);
+});

@@ -143,6 +143,14 @@
     return idx;
   }
 
+  // Hand the turn on; in a two-player game a Jump or Kickback brings it straight back
+  function advanceTurn(state, playerIndex, skip) {
+    state.currentPlayer = nextPlayerIndex(state, skip);
+    if (state.currentPlayer === playerIndex && !state.winner && state.players.length > 1) {
+      state.message += ' — ' + state.players[playerIndex].name + ' plays again.';
+    }
+  }
+
   function availableAnswerCards(player, questionCard) {
     return player.hand.filter(function (card) {
       return card.type === 'answer' && (card.suit === questionCard.suit || card.rank === questionCard.rank);
@@ -281,6 +289,7 @@
 
       if (card.type === 'kickback') {
         state.direction = state.direction * -1;
+        if (state.players.length === 2) skip = 1;
       }
 
       if (card.rank === 'A') {
@@ -317,7 +326,7 @@
       player.declaredNiko = false;
     }
 
-    state.currentPlayer = nextPlayerIndex(state, skip);
+    advanceTurn(state, playerIndex, skip);
     return state;
   }
 
@@ -471,6 +480,7 @@
       }
 
       var skip = 0;
+      var reversals = 0;
       var mLabels = [];
       for (var m = 0; m < cards.length; m += 1) {
         player.hand = player.hand.filter(function (c) { return c.id !== cards[m].id; });
@@ -486,8 +496,12 @@
           state.pendingPenalty = { rank: cc.rank, amount: amt };
         }
         if (cc.type === 'jump') skip += 1;
-        if (cc.type === 'kickback') state.direction *= -1;
+        if (cc.type === 'kickback') {
+          state.direction *= -1;
+          reversals += 1;
+        }
       }
+      if (state.players.length === 2 && reversals % 2 === 1) skip += 1;
 
       state.requiredSuit = null;
       state.message = player.name + ' played ' + mLabels.join(' + ');
@@ -515,7 +529,7 @@
       }
 
       if (!state.pendingPenalty) {
-        state.currentPlayer = nextPlayerIndex(state, skip);
+        advanceTurn(state, playerIndex, skip);
       } else {
         state.currentPlayer = nextPlayerIndex(state, 0);
       }
@@ -695,7 +709,7 @@
       } else if (c.type === 'jump') {
         score += nextHand <= 3 ? 18 : 4;
       } else if (c.type === 'kickback') {
-        score += 3;
+        score += before.players.length === 2 ? (nextHand <= 3 ? 18 : 4) : 3;
       }
     });
 
