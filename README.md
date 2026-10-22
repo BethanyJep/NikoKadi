@@ -117,7 +117,7 @@ To enable it:
 
 ### On your turn
 
-Play a card that matches the top card by **suit or rank** (after a **J, Q or K** the next card must match the **suit**), or **draw a card** (which ends your turn, even if the drawn card is playable). You can play several cards at once if they share the same rank (e.g. 7♥ + 7♠) — in any order, as long as at least one matches the top card — or are Q/8 cards chained by matching suits. A Joker can only go down with other Jokers.
+Play a card that matches the top card by **suit or rank** (**J, Q and K** go on each other, in any suits, and can be played together; any other card after one of them must match its **suit**), or **draw a card** (which ends your turn, even if the drawn card is playable). You can play several cards at once if they share the same rank (e.g. 7♥ + 7♠) — in any order, as long as at least one matches the top card — or are Q/8 cards chained by matching suits. A Joker can only go down with other Jokers.
 - A play the game rejects leaves your selection in place and explains why in a toast; it is never sent to other players.
 
 ### Special cards

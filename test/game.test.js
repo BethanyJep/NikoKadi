@@ -238,15 +238,34 @@ test('three players: Kickback reverses direction to the previous player', () => 
   assert.equal(state.direction, -1);
 });
 
-test('after a J, Q or K the next card must match the suit, not the rank', () => {
-  ['J♦', 'Q♦', 'K♦'].forEach((top) => {
-    const rank = top.slice(0, -1);
-    const state = makeState([[rank + '♣', '5♣', '6♦'], ['4♥', '9♣']], top);
-    KadiGame.playCards(state, 0, idsOf(state, 0, [rank + '♣']));
-    assert.equal(state.discardPile.length, 1, top + ' rank match should be rejected');
-    KadiGame.playCards(state, 0, idsOf(state, 0, ['6♦']));
-    assert.equal(state.discardPile.length, 2, top + ' suit match should be accepted');
+test('after a J, Q or K a non-face card must match the suit', () => {
+  ['J♠', 'Q♠', 'K♠'].forEach((top) => {
+    const state = makeState([['2♦', '5♦', '6♠'], ['4♥', '9♣']], top);
+    KadiGame.playCards(state, 0, idsOf(state, 0, ['2♦']));
+    assert.equal(state.discardPile.length, 1, top + ': 2♦ must be rejected');
+    KadiGame.playCards(state, 0, idsOf(state, 0, ['6♠']));
+    assert.equal(state.discardPile.length, 2, top + ': 6♠ is accepted');
   });
+});
+
+test('J, Q and K can be played together whatever their suits', () => {
+  const s1 = makeState([['J♥', 'J♠', '6♣'], ['4♥', '9♣']], 'J♦');
+  KadiGame.playCards(s1, 0, idsOf(s1, 0, ['J♥', 'J♠']));
+  assert.equal(s1.discardPile.length, 3);
+
+  const s2 = makeState([['J♥', 'Q♠', 'K♦', '6♣'], ['4♥', '9♣']], '9♥');
+  KadiGame.playCards(s2, 0, idsOf(s2, 0, ['K♦', 'J♥', 'Q♠']));
+  assert.equal(s2.discardPile.length, 4);
+
+  const s3 = makeState([['K♥', '6♣', '7♣'], ['4♥', '9♣']], 'J♠');
+  KadiGame.playCards(s3, 0, idsOf(s3, 0, ['K♥']));
+  assert.equal(s3.discardPile.length, 2);
+});
+
+test('a non-face card cannot be added to a J, Q or K set', () => {
+  const state = makeState([['J♠', '2♠', '6♠'], ['4♥', '9♣']], '9♠');
+  KadiGame.playCards(state, 0, idsOf(state, 0, ['J♠', '2♠']));
+  assert.equal(state.discardPile.length, 1);
 });
 
 test('Ace and Joker can still be played on a J, Q or K', () => {
