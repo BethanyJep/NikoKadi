@@ -13,6 +13,9 @@
   var soloReturn = 'auth';
   var onlineUser = null;
   var botTimer = null;
+  var moveLog = [];
+  var lastMoveKey = '';
+  var shakeHand = false;
   var BOT_DELAY = 1100;
   var BOT_NAMES = ['Bot Juma', 'Bot Amani', 'Bot Zuri'];
 
@@ -301,6 +304,8 @@
     showScreen('game');
     findMyPlayerIndex();
     selectedCardIds = [];
+    moveLog = [];
+    lastMoveKey = '';
 
     if (!soloMode) {
       Multiplayer.subscribeToGameState(currentRoom.id, function (newState, updatedBy) {
@@ -420,6 +425,22 @@
     renderGame();
   }
 
+  // Runs a move; if the engine rejects it, undo the message change, keep the
+  // selection so it can be adjusted, and explain with a toast. Nothing is saved.
+  function attempt(move) {
+    var previousMessage = gameState.message;
+    var discards = gameState.discardPile.length;
+    move();
+    if (gameState.discardPile.length !== discards) return true;
+
+    var reason = gameState.message;
+    gameState.message = previousMessage;
+    if (reason && reason !== previousMessage) showToast(reason);
+    shakeHand = true;
+    renderGame();
+    return false;
+  }
+
   async function playSelected() {
     if (!isMyTurn() || selectedCardIds.length === 0) return;
     if (gameState.pendingQuestion) return;
@@ -435,14 +456,11 @@
       suitChoice = sel ? sel.value : '♠';
     }
 
-    KadiGame.playCards(gameState, myPlayerIndex, selectedCardIds.slice(), suitChoice);
+    var ids = selectedCardIds.slice();
+    if (!attempt(function () { KadiGame.playCards(gameState, myPlayerIndex, ids, suitChoice); })) return;
     selectedCardIds = [];
 
-    if (gameState.winner) {
-      scores[gameState.winner] = gameState.players.find(function (p) {
-        return p.name === gameState.winner;
-      }).score;
-    }
+    recordWinner();
     renderGame();
     await persistState();
   }
@@ -465,14 +483,11 @@
 
   async function submitAnswer() {
     if (!isMyPendingQuestion() || selectedCardIds.length === 0) return;
-    KadiGame.answerQuestion(gameState, myPlayerIndex, selectedCardIds.slice());
+    var ids = selectedCardIds.slice();
+    if (!attempt(function () { KadiGame.answerQuestion(gameState, myPlayerIndex, ids); })) return;
     selectedCardIds = [];
 
-    if (gameState.winner) {
-      scores[gameState.winner] = gameState.players.find(function (p) {
-        return p.name === gameState.winner;
-      }).score;
-    }
+    recordWinner();
     renderGame();
     await persistState();
   }
@@ -481,8 +496,13 @@
     var players = gameState.players.map(function (p) {
       return { name: p.name, userId: p.userId, isBot: p.isBot };
     });
-    gameState = KadiGame.startRound(players, scores);
+    var board = {};
+    gameState.players.forEach(function (p) { board[p.name] = p.score; });
+    scores = board;
+    var starter = gameState.players.findIndex(function (p) { return p.name === gameState.winner; });
+    gameState = KadiGame.startRound(players, scores, starter);
     selectedCardIds = [];
+    moveLog = [];
     renderGame();
     await persistState();
   }
@@ -502,7 +522,9 @@
         + '" aria-pressed="' + isSelected + '" aria-label="' + escapeHtml(card.label || card.rank + card.suit) + '">'
         + cardHtml(card) + '</button>';
     }).join('');
-    var handHtml = '<div class="hand" style="' + fanVars(handSize) + '">' + cards + '</div>';
+    var shake = isMe && shakeHand ? ' shake' : '';
+    if (isMe) shakeHand = false;
+    var handHtml = '<div class="hand' + shake + '" style="' + fanVars(handSize) + '">' + cards + '</div>';
 
     var actionsHtml = '';
     if (isMe && !gameState.winner) {
@@ -626,9 +648,28 @@
     return '<div class="status-strip">' + chips.join('') + '</div>';
   }
 
+  // Keeps the last few table messages so back-to-back moves are not lost
+  function trackMoves() {
+    var key = [gameState.message, gameState.discardPile.length, gameState.drawPile.length,
+      gameState.currentPlayer].concat(gameState.players.map(function (p) { return p.hand.length; })).join('|');
+    if (key === lastMoveKey) return;
+    lastMoveKey = key;
+    moveLog.push(gameState.message);
+    if (moveLog.length > 5) moveLog.shift();
+  }
+
+  function recentMovesHtml() {
+    var earlier = moveLog.slice(0, -1);
+    if (!earlier.length) return '';
+    return '<ol class="move-log" aria-label="Recent moves">' + earlier.slice().reverse().map(function (m) {
+      return '<li>' + escapeHtml(m) + '</li>';
+    }).join('') + '</ol>';
+  }
+
   // ── Main game render ──
   function renderGame() {
     if (!gameState) return;
+    trackMoves();
 
     var board = document.getElementById('board');
     var top = KadiGame.topDiscard(gameState);
@@ -676,6 +717,7 @@
       + '<span class="deck-count">' + gameState.drawPile.length + ' cards</span></div>'
       + '</div>'
       + '<div class="table-info">'
+      + recentMovesHtml()
       + topInfo
       + (gameState.winner ? '<p class="winner">🏆 ' + escapeHtml(gameState.message) + '</p>' : '<p>' + escapeHtml(gameState.message) + '</p>')
       + '</div>'

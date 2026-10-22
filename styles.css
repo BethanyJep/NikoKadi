@@ -285,6 +285,29 @@ button:disabled { opacity: 0.45; cursor: not-allowed; transform: none; box-shado
 
 .table-center .table-info p { margin: 0.2rem 0; }
 
+/* Last few moves, newest first, fading out */
+.move-log {
+  list-style: none;
+  margin: 0 0 0.4rem;
+  padding: 0;
+  font-size: 0.78rem;
+}
+
+.move-log li { margin: 0.1rem 0; opacity: 0.75; }
+.move-log li:nth-child(2) { opacity: 0.55; }
+.move-log li:nth-child(n+3) { opacity: 0.4; }
+
+/* A rejected play nudges the hand sideways */
+.hand.shake { animation: hand-shake 0.35s ease-in-out; }
+
+@keyframes hand-shake {
+  0%, 100% { translate: 0; }
+  20% { translate: -8px; }
+  40% { translate: 8px; }
+  60% { translate: -5px; }
+  80% { translate: 5px; }
+}
+
 /* The deck: a squared-off stack, its thickness drawn as stepped edges */
 .deck {
   position: relative;
@@ -973,7 +996,8 @@ button.card:focus-visible {
   .confetti { display: none; }
 
   .toast,
-  .toast.toast-exit { animation: none; }
+  .toast.toast-exit,
+  .hand.shake { animation: none; }
 
   button,
   button.card,

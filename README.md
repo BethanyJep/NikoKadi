@@ -113,11 +113,12 @@ To enable it:
 - **54-card deck** (standard 52 + 2 Jokers).
 - Each player is dealt **4 cards** (2–3 players) or **3 cards** (4 players).
 - One card is turned face up to start the discard pile. The starting card is never a 2, 3, A, J, K, Q, 8 or Joker.
-- Play moves clockwise; the first player in the room goes first.
+- Play moves clockwise; the first player in the room goes first, and each new round is started by the previous winner.
 
 ### On your turn
 
-Play a card that matches the top card by **suit or rank**, or **draw a card** (which ends your turn). You can play several cards at once if they share the same rank (e.g. 7♥ + 7♠), or are Q/8 cards chained by matching suits.
+Play a card that matches the top card by **suit or rank**, or **draw a card** (which ends your turn, even if the drawn card is playable). You can play several cards at once if they share the same rank (e.g. 7♥ + 7♠) — in any order, as long as at least one matches the top card — or are Q/8 cards chained by matching suits. A Joker can only go down with other Jokers.
+- A play the game rejects leaves your selection in place and explains why in a toast; it is never sent to other players.
 
 ### Special cards
 
@@ -127,8 +128,8 @@ Play a card that matches the top card by **suit or rank**, or **draw a card** (w
 | **3** | Penalty | Next player draws 3 — unless they block |
 | **Joker** | Penalty | Next player draws 5; can be played on anything and keeps the previous suit in force |
 | **A** | Ace | Can be played on anything; you **request a suit** that the next card must match. An Ace also blocks a pending penalty |
-| **J** | Jump | Skips the next player |
-| **K** | Kickback | Reverses the direction of play |
+| **J** | Jump | Skips the next player. Each Jump in a set skips one more player, but never the player who played them |
+| **K** | Kickback | Reverses the direction of play. Each K reverses once, so two in one play cancel out |
 | **Q / 8** | Question | You must **answer** it in the same turn (see below) |
 | **4–10** | Answer | Plain number cards; used to answer Questions and to win |
 

@@ -134,8 +134,8 @@
   }
 
   function nextPlayerIndex(state, skip) {
-    var step = 1 + (skip || 0);
     var size = state.players.length;
+    var step = 1 + Math.min(skip || 0, size - 1);
     var idx = state.currentPlayer;
     for (var i = 0; i < step; i += 1) {
       idx = (idx + state.direction + size) % size;
@@ -186,7 +186,7 @@
     return points;
   }
 
-  function startRound(names, scoreBoard) {
+  function startRound(names, scoreBoard, starter) {
     var deck = shuffle(createDeck());
     var players = createPlayers(names, scoreBoard || {});
     var handCount = dealCount(players.length);
@@ -204,17 +204,19 @@
       discard = deck.pop();
     }
 
+    var first = starter >= 0 && starter < players.length ? starter : 0;
+
     return {
       players: players,
       drawPile: deck,
       discardPile: [discard],
-      currentPlayer: 0,
+      currentPlayer: first,
       direction: 1,
       pendingPenalty: null,
       pendingQuestion: null,
       requiredSuit: null,
       winner: null,
-      message: players[0].name + ' starts!'
+      message: players[first].name + ' starts!'
     };
   }
 
@@ -354,6 +356,22 @@
     return state;
   }
 
+  // The first card played must match the top card, whatever order the cards were picked in
+  function orderForPlay(cards, top, requiredSuit) {
+    var sameRank = cards.every(function (c) { return c.rank === cards[0].rank; });
+    if (sameRank) {
+      var m = cards.findIndex(function (c) { return cardMatches(c, top, requiredSuit); });
+      if (m < 0) return null;
+      return [cards[m]].concat(cards.filter(function (c, i) { return i !== m; }));
+    }
+    var reversed = cards.slice().reverse();
+    var options = [cards, reversed];
+    for (var i = 0; i < options.length; i += 1) {
+      if (cardMatches(options[i][0], top, requiredSuit)) return options[i];
+    }
+    return null;
+  }
+
   function playCards(state, playerIndex, cardIds, suitChoice) {
     if (state.winner) return state;
     if (state.pendingQuestion) return state;
@@ -410,19 +428,22 @@
         state.requiredSuit = null;
       }
       state.message = player.name + ' played ' + labels.join(' + ') + ' (penalty now ' + totalPenalty + ')';
+      state.currentPlayer = nextPlayerIndex(state, 0);
     } else {
       // Normal multi-card play
-      var firstCard = cards[0];
-      if (!cardMatches(firstCard, top, state.requiredSuit)) {
-        state.message = firstCard.label + ' does not match the top card.';
+      var ordered = orderForPlay(cards, top, state.requiredSuit);
+      if (!ordered) {
+        state.message = 'None of those cards match ' + top.label + '.';
         return state;
       }
+      cards = ordered;
+      var firstCard = cards[0];
 
       // Determine if this is a valid multi-card combination:
       // 1) All same rank (e.g. 7♥ + 7♠)
       // 2) All question cards (Q/8) with suit chaining between consecutive cards
       var allSameRank = cards.every(function (c) {
-        return c.rank === firstCard.rank || c.rank === 'JOKER';
+        return c.rank === firstCard.rank;
       });
 
       var allQuestion = cards.every(function (c) {
@@ -498,10 +519,6 @@
       } else {
         state.currentPlayer = nextPlayerIndex(state, 0);
       }
-    }
-
-    if (state.pendingPenalty) {
-      state.currentPlayer = nextPlayerIndex(state, 0);
     }
 
     if (player.hand.length === 0) {
@@ -691,8 +708,9 @@
     score += remaining.filter(function (c) { return c.suit === suit; }).length * 4;
 
     if (remaining.length === 0) {
-      // Going out without winning costs a penalty card
-      score -= 60;
+      // Going out without winning costs a penalty card, so only dump a lone
+      // action card when it is a penalty attack
+      score -= cards.some(function (c) { return c.type === 'penalty'; }) ? 60 : 90;
     }
     if (remaining.length === 1 && canWinWithCard(remaining[0])) score += 15;
     return score;
@@ -722,8 +740,17 @@
     var penalty = state.pendingPenalty ? state.pendingPenalty.amount : 0;
     var best = { type: 'draw', score: penalty ? -penalty * 8 : -40 };
 
-    subsetsUpTo(player.hand, 3).forEach(function (cards) {
+    var combos = [];
+    subsetsUpTo(player.hand, 4).forEach(function (cards) {
       if (!sameKind(cards)) return;
+      combos.push(cards);
+      // Q/8 chains care about order, so also try the reverse
+      if (cards.length > 1 && cards.every(function (c) { return c.type === 'question'; })) {
+        combos.push(cards.slice().reverse());
+      }
+    });
+
+    combos.forEach(function (cards) {
       var ids = cards.map(function (c) { return c.id; });
       var remaining = player.hand.filter(function (c) { return ids.indexOf(c.id) < 0; });
       var suitChoice = mostCommonSuit(remaining, cards[cards.length - 1].suit);
